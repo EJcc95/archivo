@@ -7,7 +7,7 @@ const { createRolValidator, updateRolValidator } = require('../validators/rolVal
 
 // Todas las rutas protegidas y solo para ADMIN
 router.use(authMiddleware);
-router.use(checkRole(['ADMIN']));
+router.use(checkRole(['ADMINISTRADOR']));
 
 router.post('/', createRolValidator, rolController.createRol);
 router.get('/', rolController.getAllRoles);

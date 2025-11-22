@@ -15,9 +15,9 @@ router.get('/:id', archivadorController.getArchivadorById);
 // Rutas protegidas para ADMIN (escritura)
 // Nota: Podríamos permitir a otros roles crear archivadores si fuera necesario, 
 // pero por ahora restringimos a ADMIN según patrón anterior.
-router.post('/', checkRole(['ADMIN']), createArchivadorValidator, archivadorController.createArchivador);
-router.put('/:id', checkRole(['ADMIN']), updateArchivadorValidator, archivadorController.updateArchivador);
-router.delete('/:id', checkRole(['ADMIN']), archivadorController.deleteArchivador);
-router.put('/:id/restore', checkRole(['ADMIN']), archivadorController.restoreArchivador);
+router.post('/', checkRole(['ADMINISTRADOR']), createArchivadorValidator, archivadorController.createArchivador);
+router.put('/:id', checkRole(['ADMINISTRADOR']), updateArchivadorValidator, archivadorController.updateArchivador);
+router.delete('/:id', checkRole(['ADMINISTRADOR']), archivadorController.deleteArchivador);
+router.put('/:id/restore', checkRole(['ADMINISTRADOR']), archivadorController.restoreArchivador);
 
 module.exports = router;

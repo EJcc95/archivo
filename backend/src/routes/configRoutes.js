@@ -6,7 +6,7 @@ const checkRole = require('../middlewares/roleMiddleware');
 
 // Rutas protegidas solo para ADMIN
 router.use(authMiddleware);
-router.use(checkRole(['ADMIN']));
+router.use(checkRole(['ADMINISTRADOR']));
 
 router.get('/', configController.getAllConfigs);
 router.get('/:key', configController.getConfig);

@@ -25,8 +25,7 @@ class AreaService {
   }
 
   async getAllAreas(query = {}) {
-    const { page = 1, limit = 10, search = '', estado } = query;
-    const offset = (page - 1) * limit;
+    const { page, limit, search = '', estado } = query;
 
     const whereClause = {};
     if (search) {
@@ -40,22 +39,37 @@ class AreaService {
       whereClause.estado = estado === 'true';
     }
 
-    const { count, rows } = await Area.findAndCountAll({
+    // If pagination params are provided, use pagination
+    if (page && limit) {
+      const offset = (page - 1) * limit;
+      const { count, rows } = await Area.findAndCountAll({
+        where: whereClause,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        include: [
+          { model: Organizacion, attributes: ['nombre'] }
+        ],
+        order: [['nombre_area', 'ASC']]
+      });
+
+      return {
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: parseInt(page),
+        areas: rows
+      };
+    }
+
+    // Otherwise, return all areas
+    const areas = await Area.findAll({
       where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
       include: [
         { model: Organizacion, attributes: ['nombre'] }
       ],
       order: [['nombre_area', 'ASC']]
     });
 
-    return {
-      total: count,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page),
-      areas: rows
-    };
+    return areas;
   }
 
   async getAreaById(id) {

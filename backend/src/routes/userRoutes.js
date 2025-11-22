@@ -16,10 +16,10 @@ router.put('/profile', authenticate, updateProfileValidator, userController.upda
 router.put('/change-password', authenticate, changePasswordValidator, userController.changePassword);
 
 // Rutas de administración (Solo ADMIN)
-router.post('/', authenticate, checkRole(['ADMIN']), createUserValidator, userController.createUser);
-router.get('/', authenticate, checkRole(['ADMIN']), userController.getAllUsers);
-router.get('/:id', authenticate, checkRole(['ADMIN']), userController.getUserById);
-router.put('/:id', authenticate, checkRole(['ADMIN']), updateUserValidator, userController.updateUser);
-router.delete('/:id', authenticate, checkRole(['ADMIN']), userController.deleteUser);
+router.post('/', authenticate, checkRole(['ADMINISTRADOR']), createUserValidator, userController.createUser);
+router.get('/', authenticate, checkRole(['ADMINISTRADOR']), userController.getAllUsers);
+router.get('/:id', authenticate, checkRole(['ADMINISTRADOR']), userController.getUserById);
+router.put('/:id', authenticate, checkRole(['ADMINISTRADOR']), updateUserValidator, userController.updateUser);
+router.delete('/:id', authenticate, checkRole(['ADMINISTRADOR']), userController.deleteUser);
 
 module.exports = router;

@@ -12,9 +12,9 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage';
 // Module Pages
 import UsersPage from '@/pages/usuarios/UsersPage';
 import RolesPage from '@/pages/roles/RolesPage';
-import AreasPage from '@/pages/areas/AreasPage';
-import ArchivadoresPage from '@/pages/archivadores/ArchivadoresPage';
-import DocumentosPage from '@/pages/documentos/DocumentosPage';
+import AreasRouter from '@/pages/areas';
+import ArchivadoresRouter from '@/pages/archivadores';
+import DocumentosRouter from '@/pages/documentos';
 
 export const AppRouter = () => {
   return (
@@ -34,9 +34,9 @@ export const AppRouter = () => {
         {/* Modules */}
         <Route path="/usuarios/*" element={<UsersPage />} />
         <Route path="/roles/*" element={<RolesPage />} />
-        <Route path="/areas/*" element={<AreasPage />} />
-        <Route path="/archivadores/*" element={<ArchivadoresPage />} />
-        <Route path="/documentos/*" element={<DocumentosPage />} />
+        <Route path="/areas/*" element={<AreasRouter />} />
+        <Route path="/archivadores/*" element={<ArchivadoresRouter />} />
+        <Route path="/documentos/*" element={<DocumentosRouter />} />
       </Route>
 
       {/* Catch all */}

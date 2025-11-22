@@ -6,8 +6,16 @@ const logger = require('./config/logger');
 
 const app = express();
 
-// Middlewares Globales
-app.use(helmet()); // Seguridad HTTP headers
+// Seguridad HTTP headers con configuración para permitir iframes desde frontend
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "frame-ancestors": ["'self'", "http://localhost:5173", "http://localhost:5174"],
+    },
+  },
+}));
+
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],

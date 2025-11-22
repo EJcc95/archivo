@@ -35,7 +35,7 @@ class DocumentoController {
 
   async updateDocumento(req, res, next) {
     try {
-      const documento = await documentoService.updateDocumento(req.params.id, req.body, req.user.id_usuario);
+      const documento = await documentoService.updateDocumento(req.params.id, req.body, req.user.id_usuario, req.file);
       res.json({ success: true, message: 'Documento actualizado', data: documento });
     } catch (error) {
       next(error);
@@ -81,8 +81,6 @@ class DocumentoController {
   async viewDocumento(req, res, next) {
     try {
       const filePath = await documentoService.getFilePath(req.params.id);
-      // res.sendFile envía el archivo con Content-Disposition: inline por defecto para PDFs si no se especifica attachment
-      // También podemos forzarlo:
       res.sendFile(filePath, {
         headers: {
           'Content-Type': 'application/pdf',

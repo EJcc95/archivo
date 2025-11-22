@@ -1,5 +1,6 @@
 const { Documento, Archivador, Area, TipoDocumento, Usuario } = require('../models');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -47,33 +48,69 @@ class DocumentoService {
     console.log('Service createDocumento file:', file);
     let rutaArchivo = null;
 
+    // Validaciones de negocio para Archivador
+    if (data.id_archivador) {
+      const archivador = await Archivador.findByPk(data.id_archivador);
+      if (!archivador) {
+        throw new Error('El archivador seleccionado no existe');
+      }
+
+      // Validar que el archivador pertenezca al área de origen
+      if (Number(archivador.id_area_propietaria) !== Number(data.id_area_origen)) {
+        throw new Error('El archivador no pertenece al área de origen seleccionada');
+      }
+
+      // Validar que el archivador sea del mismo tipo de documento
+      if (Number(archivador.id_tipo_documento_contenido) !== Number(data.id_tipo_documento)) {
+        throw new Error('El archivador no corresponde al tipo de documento seleccionado');
+      }
+    }
+
     if (file) {
       console.log('Processing file...');
       const processed = await this._processFile(file);
       rutaArchivo = processed.relativePath;
     }
 
-    const documento = await Documento.create({
-      ...data,
-      ruta_archivo_digital: rutaArchivo,
-      id_usuario_registro: userId,
-      fecha_registro_sistema: new Date(),
-      eliminado: false,
-      numero_consultas: 0
-    });
+    const transaction = await sequelize.transaction();
 
-    return documento;
+    try {
+      const documento = await Documento.create({
+        ...data,
+        ruta_archivo_digital: rutaArchivo,
+        id_usuario_registro: userId,
+        fecha_registro_sistema: new Date(),
+        eliminado: false,
+        numero_consultas: 0
+      }, { transaction });
+
+      // Actualizar contador de folios del archivador
+      if (data.id_archivador) {
+        await Archivador.increment('total_folios', {
+          by: data.numero_folios,
+          where: { id_archivador: data.id_archivador },
+          transaction
+        });
+      }
+
+      await transaction.commit();
+      return documento;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async getAllDocumentos(query = {}) {
-    const { page = 1, limit = 10, search = '', id_archivador, eliminado } = query;
-    const offset = (page - 1) * limit;
+    const { page, limit, search = '', id_archivador, eliminado } = query;
 
     const whereClause = {};
 
     // Filtro de eliminado (Soft Delete)
     // Si eliminado es 'true', mostramos papelera. Si no, mostramos activos.
-    whereClause.eliminado = eliminado === 'true';
+    if (eliminado !== undefined) {
+      whereClause.eliminado = eliminado === 'true';
+    }
 
     if (search) {
       whereClause[Op.or] = [
@@ -84,10 +121,32 @@ class DocumentoService {
 
     if (id_archivador) whereClause.id_archivador = id_archivador;
 
-    const { count, rows } = await Documento.findAndCountAll({
+    // If pagination params are provided, use pagination
+    if (page && limit) {
+      const offset = (page - 1) * limit;
+      const { count, rows } = await Documento.findAndCountAll({
+        where: whereClause,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        include: [
+          { model: TipoDocumento, attributes: ['nombre_tipo'] },
+          { model: Area, as: 'areaOrigen', attributes: ['nombre_area'] },
+          { model: Archivador, attributes: ['nombre_archivador'] }
+        ],
+        order: [['fecha_registro_sistema', 'DESC']]
+      });
+
+      return {
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: parseInt(page),
+        documentos: rows
+      };
+    }
+
+    // Otherwise, return all documentos
+    const documentos = await Documento.findAll({
       where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
       include: [
         { model: TipoDocumento, attributes: ['nombre_tipo'] },
         { model: Area, as: 'areaOrigen', attributes: ['nombre_area'] },
@@ -96,12 +155,7 @@ class DocumentoService {
       order: [['fecha_registro_sistema', 'DESC']]
     });
 
-    return {
-      total: count,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page),
-      documentos: rows
-    };
+    return documentos;
   }
 
   async getDocumentoById(id) {
@@ -123,30 +177,119 @@ class DocumentoService {
     return documento;
   }
 
-  async updateDocumento(id, data, userId) {
+  async updateDocumento(id, data, userId, file) {
     const documento = await Documento.findByPk(id);
     if (!documento) throw new Error('Documento no encontrado');
 
-    await documento.update({
-      ...data,
-      id_usuario_modificacion: userId,
-      fecha_modificacion: new Date()
-    });
+    // Validaciones si cambia el archivador
+    if (data.id_archivador && Number(data.id_archivador) !== documento.id_archivador) {
+      const archivador = await Archivador.findByPk(data.id_archivador);
+      if (!archivador) throw new Error('El archivador seleccionado no existe');
 
-    return this.getDocumentoById(id);
+      // Validar área (usar data.id_area_origen si viene, sino la del documento actual)
+      const idAreaOrigen = data.id_area_origen ? Number(data.id_area_origen) : documento.id_area_origen;
+      if (Number(archivador.id_area_propietaria) !== idAreaOrigen) {
+        throw new Error('El archivador no pertenece al área de origen del documento');
+      }
+
+      // Validar tipo documento
+      const idTipoDoc = data.id_tipo_documento ? Number(data.id_tipo_documento) : documento.id_tipo_documento;
+      if (Number(archivador.id_tipo_documento_contenido) !== idTipoDoc) {
+        throw new Error('El archivador no corresponde al tipo de documento');
+      }
+    }
+
+    let rutaArchivo = documento.ruta_archivo_digital;
+
+    // Si se proporciona un nuevo archivo, procesarlo
+    if (file) {
+      const processed = await this._processFile(file);
+      rutaArchivo = processed.relativePath;
+    }
+
+    const transaction = await sequelize.transaction();
+
+    try {
+      // Lógica de actualización de folios
+      const oldArchivadorId = documento.id_archivador;
+      const newArchivadorId = data.id_archivador ? Number(data.id_archivador) : oldArchivadorId;
+      const oldFolios = documento.numero_folios;
+      const newFolios = data.numero_folios ? Number(data.numero_folios) : oldFolios;
+
+      // Caso 1: Cambio de archivador
+      if (oldArchivadorId !== newArchivadorId) {
+        // Restar del viejo
+        if (oldArchivadorId) {
+          await Archivador.decrement('total_folios', {
+            by: oldFolios,
+            where: { id_archivador: oldArchivadorId },
+            transaction
+          });
+        }
+        // Sumar al nuevo
+        if (newArchivadorId) {
+          await Archivador.increment('total_folios', {
+            by: newFolios,
+            where: { id_archivador: newArchivadorId },
+            transaction
+          });
+        }
+      }
+      // Caso 2: Mismo archivador, cambio de folios
+      else if (newArchivadorId && oldFolios !== newFolios) {
+        const diff = newFolios - oldFolios;
+        if (diff !== 0) {
+          await Archivador.increment('total_folios', {
+            by: diff,
+            where: { id_archivador: newArchivadorId },
+            transaction
+          });
+        }
+      }
+
+      await documento.update({
+        ...data,
+        ruta_archivo_digital: rutaArchivo,
+        id_usuario_modificacion: userId,
+        fecha_modificacion: new Date()
+      }, { transaction });
+
+      await transaction.commit();
+      return this.getDocumentoById(id);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async softDeleteDocumento(id, userId) {
     const documento = await Documento.findByPk(id);
     if (!documento) throw new Error('Documento no encontrado');
 
-    await documento.update({
-      eliminado: true,
-      fecha_eliminacion: new Date(),
-      id_usuario_eliminacion: userId
-    });
+    const transaction = await sequelize.transaction();
 
-    return true;
+    try {
+      await documento.update({
+        eliminado: true,
+        fecha_eliminacion: new Date(),
+        id_usuario_eliminacion: userId
+      }, { transaction });
+
+      // Restar folios del archivador al enviar a papelera
+      if (documento.id_archivador) {
+        await Archivador.decrement('total_folios', {
+          by: documento.numero_folios,
+          where: { id_archivador: documento.id_archivador },
+          transaction
+        });
+      }
+
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async restoreDocumento(id) {
@@ -160,13 +303,30 @@ class DocumentoService {
       throw new Error('No se puede restaurar el documento porque su Archivador contenedor ha sido eliminado. Restaure el archivador primero.');
     }
 
-    await documento.update({
-      eliminado: false,
-      fecha_eliminacion: null,
-      id_usuario_eliminacion: null
-    });
+    const transaction = await sequelize.transaction();
 
-    return true;
+    try {
+      await documento.update({
+        eliminado: false,
+        fecha_eliminacion: null,
+        id_usuario_eliminacion: null
+      }, { transaction });
+
+      // Sumar folios al archivador al restaurar
+      if (documento.id_archivador) {
+        await Archivador.increment('total_folios', {
+          by: documento.numero_folios,
+          where: { id_archivador: documento.id_archivador },
+          transaction
+        });
+      }
+
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async hardDeleteDocumento(id) {
@@ -189,6 +349,17 @@ class DocumentoService {
           fs.unlinkSync(fullPath);
         }
       }
+    }
+
+    // Nota: No es necesario restar folios aquí porque hardDelete solo se llama después de softDelete (donde ya se restaron),
+    // O si se implementa directo, habría que restar. Asumimos flujo normal soft -> hard.
+    // Si el documento NO estaba eliminado (caso raro de hard delete directo), habría que restar.
+    // Por seguridad, verificamos:
+    if (!documento.eliminado && documento.id_archivador) {
+      await Archivador.decrement('total_folios', {
+        by: documento.numero_folios,
+        where: { id_archivador: documento.id_archivador }
+      });
     }
 
     await documento.destroy();

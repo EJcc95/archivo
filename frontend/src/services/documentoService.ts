@@ -1,5 +1,6 @@
 import api from '@/api/axios';
 import type { Documento } from '@/types/models';
+import { getSecureItem } from '@/utils/encryption';
 
 export const documentoService = {
   getAll: async (params?: any) => {
@@ -16,8 +17,10 @@ export const documentoService = {
     });
     return data.data;
   },
-  update: async (id: number, documento: Partial<Documento>) => {
-    const { data } = await api.put(`/documentos/${id}`, documento);
+  update: async (id: number, documento: Partial<Documento> | FormData) => {
+    const isFormData = documento instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const { data } = await api.put(`/documentos/${id}`, documento, config);
     return data.data;
   },
   delete: async (id: number) => {
@@ -27,6 +30,20 @@ export const documentoService = {
   restore: async (id: number) => {
     const { data } = await api.put(`/documentos/${id}/restore`);
     return data.data;
+  },
+  download: async (id: number) => {
+    const response = await api.get(`/documentos/${id}/download`, { responseType: 'blob' });
+    return response.data;
+  },
+  getViewUrl: (id: number) => {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    // Get decrypted token from secure storage
+    const token = getSecureItem<string>('token');
+    if (!token) {
+      console.warn('No token found for PDF viewing');
+      return `${baseURL}/documentos/${id}/view`;
+    }
+    return `${baseURL}/documentos/${id}/view?token=${encodeURIComponent(token)}`;
   },
   view: async (id: number) => {
     // Retorna la URL para visualizar el documento

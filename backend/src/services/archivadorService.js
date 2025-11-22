@@ -25,8 +25,7 @@ class ArchivadorService {
   }
 
   async getAllArchivadores(query = {}) {
-    const { page = 1, limit = 10, search = '', id_area, estado } = query;
-    const offset = (page - 1) * limit;
+    const { page, limit, search = '', id_area, estado } = query;
 
     const whereClause = { eliminado: false };
 
@@ -41,34 +40,51 @@ class ArchivadorService {
     if (id_area) whereClause.id_area_propietaria = id_area;
     if (estado) whereClause.estado = estado;
 
-    const { count, rows } = await Archivador.findAndCountAll({
+    // If pagination params are provided, use pagination
+    if (page && limit) {
+      const offset = (page - 1) * limit;
+      const { count, rows } = await Archivador.findAndCountAll({
+        where: whereClause,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        include: [
+          { model: Area, as: 'areaPropietaria', attributes: ['nombre_area'] },
+          { model: TipoDocumento, as: 'tipoDocumentoContenido', attributes: ['nombre_tipo'] },
+          { model: Usuario, as: 'usuarioCreacion', attributes: ['nombre_usuario'] }
+        ],
+        order: [['fecha_creacion', 'DESC']]
+      });
+
+      return {
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: parseInt(page),
+        archivadores: rows
+      };
+    }
+
+    // Otherwise, return all archivadores
+    const archivadores = await Archivador.findAll({
       where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
       include: [
-        { model: Area, attributes: ['nombre_area'] },
-        { model: TipoDocumento, attributes: ['nombre_tipo'] },
-        { model: Usuario, as: 'UsuarioCreacion', attributes: ['nombre_usuario'] }
+        { model: Area, as: 'areaPropietaria', attributes: ['nombre_area'] },
+        { model: TipoDocumento, as: 'tipoDocumentoContenido', attributes: ['nombre_tipo'] },
+        { model: Usuario, as: 'usuarioCreacion', attributes: ['nombre_usuario'] }
       ],
       order: [['fecha_creacion', 'DESC']]
     });
 
-    return {
-      total: count,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page),
-      archivadores: rows
-    };
+    return archivadores;
   }
 
   async getArchivadorById(id) {
     const archivador = await Archivador.findOne({
       where: { id_archivador: id, eliminado: false },
       include: [
-        { model: Area, attributes: ['id_area', 'nombre_area'] },
-        { model: TipoDocumento, attributes: ['id_tipo_documento', 'nombre_tipo'] },
-        { model: Usuario, as: 'UsuarioCreacion', attributes: ['nombre_usuario'] },
-        { model: Usuario, as: 'UsuarioModificacion', attributes: ['nombre_usuario'] }
+        { model: Area, as: 'areaPropietaria', attributes: ['id_area', 'nombre_area'] },
+        { model: TipoDocumento, as: 'tipoDocumentoContenido', attributes: ['id_tipo_documento', 'nombre_tipo'] },
+        { model: Usuario, as: 'usuarioCreacion', attributes: ['nombre_usuario'] },
+        { model: Usuario, as: 'usuarioModificacion', attributes: ['nombre_usuario'] }
       ]
     });
 
