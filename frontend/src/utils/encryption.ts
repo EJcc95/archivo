@@ -1,58 +1,23 @@
+import CryptoJS from 'crypto-js';
+
 /**
  * Encryption Utility
  * Cifra y descifra datos sensibles para almacenamiento seguro en localStorage
  * 
- * Nota: Esta es una solución temporal. La solución más segura es usar HttpOnly Cookies en el backend.
+ * Usa AES-256 para encriptar los datos.
  */
 
 /**
- * Clave de encriptación derivada de una clave maestra
- * En producción, esta clave debe:
- * 1. Generarse desde el servidor
- * 2. Almacenarse de forma segura (no en código)
- * 3. Usarse con un algoritmo de encriptación robusto (AES-256)
- * 
- * Para esta versión simple, usamos una clave estática pero esto debe mejorar
+ * Clave de encriptación
+ * Se intenta leer de variables de entorno, si no existe usa una por defecto (solo desarrollo)
  */
-const ENCRYPTION_KEY = 'archivo_secure_2024_production_key';
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'archivo_secure_2024_production_key_AES_256';
 
 /**
- * Codifica una cadena usando Base64 simple
- * NOTA: Base64 no es encriptación, solo ofuscación
- * Para mayor seguridad, implementar AES-256 con crypto-js
- */
-function encodeBase64(str: string): string {
-  try {
-    return btoa(unescape(encodeURIComponent(str)));
-  } catch (error) {
-    console.error('Error encoding string:', error);
-    return str;
-  }
-}
-
-/**
- * Decodifica una cadena Base64
- */
-function decodeBase64(str: string): string {
-  try {
-    return decodeURIComponent(escape(atob(str)));
-  } catch (error) {
-    console.error('Error decoding string:', error);
-    return str;
-  }
-}
-
-/**
- * Genera un hash simple para validar integridad
+ * Genera un hash para validar integridad
  */
 function generateHash(data: string): string {
-  let hash = 0;
-  for (let i = 0; i < data.length; i++) {
-    const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16);
+  return CryptoJS.SHA256(data).toString();
 }
 
 /**
@@ -63,20 +28,21 @@ function generateHash(data: string): string {
 export function encryptData<T>(data: T): string {
   try {
     const jsonString = JSON.stringify(data);
+
     // Agregar timestamp para validar antigüedad
-    const withTimestamp = JSON.stringify({
+    const payload = JSON.stringify({
       data: jsonString,
       timestamp: Date.now(),
     });
-    
-    // Codificar en Base64
-    const encoded = encodeBase64(withTimestamp);
-    
-    // Agregar hash para validar integridad
-    const hash = generateHash(encoded);
-    
-    // Retornar: hash|encoded
-    return `${hash}|${encoded}`;
+
+    // Cifrar con AES
+    const encrypted = CryptoJS.AES.encrypt(payload, ENCRYPTION_KEY).toString();
+
+    // Generar hash del contenido cifrado para validar integridad
+    const hash = generateHash(encrypted);
+
+    // Retornar: hash|encrypted
+    return `${hash}|${encrypted}`;
   } catch (error) {
     console.error('Error encrypting data:', error);
     return '';
@@ -85,26 +51,32 @@ export function encryptData<T>(data: T): string {
 
 /**
  * Descifra datos del almacenamiento
- * @param encrypted - String cifrado
+ * @param encryptedString - String cifrado
  * @returns Objeto descifrado o null si es inválido
  */
-export function decryptData<T>(encrypted: string): T | null {
+export function decryptData<T>(encryptedString: string): T | null {
   try {
-    if (!encrypted || !encrypted.includes('|')) {
+    if (!encryptedString || !encryptedString.includes('|')) {
       return null;
     }
 
-    const [hash, encoded] = encrypted.split('|');
-    
-    // Validar hash
-    if (generateHash(encoded) !== hash) {
+    const [hash, encrypted] = encryptedString.split('|');
+
+    // Validar integridad
+    if (generateHash(encrypted) !== hash) {
       console.warn('Data integrity check failed - possible tampering');
       return null;
     }
 
-    // Decodificar
-    const decoded = decodeBase64(encoded);
-    const { data, timestamp } = JSON.parse(decoded);
+    // Descifrar
+    const bytes = CryptoJS.AES.decrypt(encrypted, ENCRYPTION_KEY);
+    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+
+    if (!decryptedString) {
+      return null;
+    }
+
+    const { data, timestamp } = JSON.parse(decryptedString);
 
     // Validar antigüedad (24 horas)
     const maxAge = 24 * 60 * 60 * 1000; // 24 horas
@@ -139,7 +111,7 @@ export function getSecureItem<T>(key: string): T | null {
   try {
     const encrypted = localStorage.getItem(key);
     if (!encrypted) return null;
-    
+
     return decryptData<T>(encrypted);
   } catch (error) {
     console.error(`Error getting secure item ${key}:`, error);
@@ -162,3 +134,4 @@ export function clearSecureStorage(): void {
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
 }
+

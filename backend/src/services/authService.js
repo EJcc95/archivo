@@ -1,4 +1,4 @@
-const { Usuario, RefreshToken, PasswordResetToken, PasswordResetAttempt, Rol, Area, Organizacion } = require('../models');
+const { Usuario, RefreshToken, PasswordResetToken, PasswordResetAttempt, Rol, Permiso, Area, Organizacion } = require('../models');
 const { hashPassword, comparePassword } = require('../utils/password');
 const { generateAccessToken, generateRefreshToken, verifyAccessToken } = require('../utils/jwt');
 const emailService = require('./emailService');
@@ -19,7 +19,13 @@ class AuthService {
         ],
         estado: true
       },
-      include: [{ model: Rol }]
+      include: [{
+        model: Rol,
+        include: [{
+          model: Permiso,
+          through: { attributes: [] } // No necesitamos atributos de la tabla intermedia
+        }]
+      }]
     });
 
     if (!user) {
@@ -32,11 +38,15 @@ class AuthService {
       throw new Error('Credenciales inválidas');
     }
 
+    // Extraer permisos
+    const permisos = user.Rol.Permisos.map(p => p.nombre_permiso);
+
     // Generar tokens
     const accessToken = generateAccessToken({
       id_usuario: user.id_usuario,
       email: user.email,
-      rol: user.Rol.nombre_rol
+      rol: user.Rol.nombre_rol,
+      permisos
     });
 
     const { token: refreshToken, hash: tokenHash } = generateRefreshToken();
@@ -63,7 +73,8 @@ class AuthService {
         nombre: user.nombres,
         apellido: user.apellidos,
         email: user.email,
-        rol: user.Rol.nombre_rol
+        rol: user.Rol.nombre_rol,
+        permisos
       },
       accessToken,
       refreshToken
@@ -90,18 +101,28 @@ class AuthService {
 
     // Obtener usuario
     const user = await Usuario.findByPk(storedToken.id_usuario, {
-      include: [{ model: Rol }]
+      include: [{
+        model: Rol,
+        include: [{
+          model: Permiso,
+          through: { attributes: [] }
+        }]
+      }]
     });
 
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
 
+    // Extraer permisos
+    const permisos = user.Rol.Permisos.map(p => p.nombre_permiso);
+
     // Generar nuevos tokens
     const accessToken = generateAccessToken({
       id_usuario: user.id_usuario,
       email: user.email,
-      rol: user.Rol.nombre_rol
+      rol: user.Rol.nombre_rol,
+      permisos
     });
 
     const { token: newRefreshToken, hash: newTokenHash } = generateRefreshToken();

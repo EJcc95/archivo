@@ -92,7 +92,7 @@ const ResetPasswordPage = () => {
     setError('');
 
     try {
-      await resetPassword(token, newPassword, confirmPassword);
+      await resetPassword(token, newPassword);
       setSuccess(true);
     } catch (err: unknown) {
       let errorMessage = 'Error al restablecer la contraseña. Intenta nuevamente.';

@@ -100,7 +100,7 @@ const DashboardPage = () => {
               </div>
               
               <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
-                Bienvenido de nuevo, {user?.nombres || user?.nombre_completo || 'Usuario'}
+                Bienvenido de nuevo, {user?.nombre || 'Usuario'}
               </h1>
               
               <p className="text-base lg:text-lg text-white/90 font-light">
@@ -166,7 +166,7 @@ const DashboardPage = () => {
           ) : (
             <div className="space-y-3">
               {dashboardStats?.documentsByState && dashboardStats.documentsByState.length > 0 ? (
-                dashboardStats.documentsByState.map((item, index) => {
+                dashboardStats.documentsByState.map((item: any, index: number) => {
                   const colors = ['bg-green-500', 'bg-orange-500', 'bg-red-500', 'bg-blue-500'];
                   const color = colors[index % colors.length];
                   return (
@@ -196,7 +196,7 @@ const DashboardPage = () => {
           </div>
           {userActivity && userActivity.length > 0 ? (
             <div className="space-y-4">
-              {userActivity.map((activity, index) => {
+              {userActivity.map((activity: any, index: number) => {
                 const initials = activity.usuario.nombres.charAt(0) + (activity.usuario.apellidos?.charAt(0) || '');
                 const fullName = `${activity.usuario.nombres} ${activity.usuario.apellidos || ''}`.trim();
                 const timeAgo = new Date(activity.ultima_actividad).toLocaleDateString('es-ES', {

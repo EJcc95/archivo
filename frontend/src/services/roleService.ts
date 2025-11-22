@@ -21,5 +21,33 @@ export const roleService = {
   delete: async (id: number) => {
     const { data } = await api.delete(`/roles/${id}`);
     return data.data;
+  },
+  getRoleById: async (id: number) => {
+    const { data } = await api.get(`/roles/${id}`);
+    return data.data;
+  },
+  assignPermissions: async (id: number, data: { permisos: number[] }) => {
+    const response = await api.post(`/roles/${id}/permissions`, data);
+    return response.data;
+  },
+  createRole: async (rol: Partial<Rol>) => {
+    const { data } = await api.post('/roles', rol);
+    return data.data;
+  },
+  updateRole: async (id: number, rol: Partial<Rol>) => {
+    const { data } = await api.put(`/roles/${id}`, rol);
+    return data.data;
+  },
+  getRoles: async () => {
+    const { data } = await api.get('/roles');
+    return data.data;
+  },
+  deleteRole: async (id: number) => {
+    const { data } = await api.delete(`/roles/${id}`);
+    return data.data;
+  },
+  getUsersByRole: async (id: number) => {
+    const { data } = await api.get(`/roles/${id}/users`);
+    return data.data;
   }
 };

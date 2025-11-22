@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/auth';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -25,9 +25,5 @@ export const ProtectedRoutes = ({ allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/403" replace />;
   }
 
-  return (
-    <MainLayout>
-      <Outlet />
-    </MainLayout>
-  );
+  return <MainLayout />;
 };

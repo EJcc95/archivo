@@ -10,6 +10,8 @@ export interface Rol {
   id_rol: number;
   nombre_rol: string;
   descripcion?: string;
+  permisos_count?: number;
+  usuarios_count?: number;
 }
 
 export interface Usuario {

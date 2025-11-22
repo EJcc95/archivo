@@ -2,12 +2,11 @@ const express = require('express');
 const router = express.Router();
 const auditController = require('../controllers/auditController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const checkRole = require('../middlewares/roleMiddleware');
+const checkPermission = require('../middlewares/permissionMiddleware');
 
-// Rutas protegidas solo para ADMIN
+// Rutas protegidas
 router.use(authMiddleware);
-router.use(checkRole(['ADMIN']));
-
-router.get('/', auditController.getAuditLogs);
+router.use(checkPermission('system_admin'));
+router.get('/activity', auditController.getAuditLogs);
 
 module.exports = router;

@@ -16,5 +16,9 @@ export const reportService = {
   getByEstado: async () => {
     const { data } = await api.get('/reports/by-estado');
     return data.data;
+  },
+  getUserActivity: async (params?: { limit?: number }) => {
+    const { data } = await api.get('/audit/activity', { params });
+    return data.data;
   }
 };

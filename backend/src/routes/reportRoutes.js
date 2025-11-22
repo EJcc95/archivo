@@ -2,13 +2,11 @@ const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/reportController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const checkRole = require('../middlewares/roleMiddleware');
+const checkPermission = require('../middlewares/permissionMiddleware');
 
-// Rutas protegidas (ADMIN y tal vez otros roles)
+// Rutas protegidas
 router.use(authMiddleware);
-// router.use(checkRole(['ADMIN', 'USER'])); // Permitir a todos los autenticados ver reportes básicos?
-// Por ahora solo ADMIN para consistencia, o abrir si es necesario.
-router.use(checkRole(['ADMIN']));
+router.use(checkPermission('reports_access'));
 
 router.get('/dashboard', reportController.getDashboardStats);
 router.get('/by-area', reportController.getDocumentosByArea);

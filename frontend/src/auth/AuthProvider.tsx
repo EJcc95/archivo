@@ -14,13 +14,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 /**
  * Decodifica Base64 (utilidad para desencriptar datos iniciales)
  */
-function decodeBase64(str: string): string {
-  try {
-    return decodeURIComponent(escape(atob(str)));
-  } catch {
-    return '';
-  }
-}
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
