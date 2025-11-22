@@ -3,15 +3,15 @@ const logger = require('../config/logger');
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email y contraseña requeridos' });
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: 'Usuario/Email y contraseña requeridos' });
     }
 
-    const result = await authService.login(email, password, ipAddress, userAgent);
+    const result = await authService.login(identifier, password, ipAddress, userAgent);
 
     res.json({
       success: true,
@@ -19,7 +19,7 @@ const login = async (req, res) => {
       data: result
     });
   } catch (error) {
-    logger.error(`Login fallido para ${req.body.email}: ${error.message}`);
+    logger.error(`Login fallido para ${req.body.identifier}: ${error.message}`);
     res.status(401).json({ success: false, message: error.message });
   }
 };

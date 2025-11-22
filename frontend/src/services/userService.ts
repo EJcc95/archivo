@@ -21,5 +21,17 @@ export const userService = {
   delete: async (id: number) => {
     const { data } = await api.delete(`/users/${id}`);
     return data.data;
+  },
+  getProfile: async () => {
+    const { data } = await api.get('/users/profile');
+    return data.data;
+  },
+  updateProfile: async (profile: any) => {
+    const { data } = await api.put('/users/profile', profile);
+    return data.data;
+  },
+  changePassword: async (passwords: any) => {
+    const { data } = await api.put('/users/change-password', passwords);
+    return data.data;
   }
 };

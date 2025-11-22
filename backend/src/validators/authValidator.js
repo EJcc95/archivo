@@ -2,11 +2,9 @@ const { body } = require('express-validator');
 const validate = require('../middlewares/validate');
 
 const loginValidator = [
-  body('email')
+  body('identifier')
     .trim()
-    .notEmpty().withMessage('El email es requerido')
-    .isEmail().withMessage('Debe ser un email válido')
-    .normalizeEmail(),
+    .notEmpty().withMessage('El usuario o email es requerido'),
   body('password')
     .notEmpty().withMessage('La contraseña es requerida'),
   validate

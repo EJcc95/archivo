@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/utils';
 
 interface DropdownProps {
@@ -65,14 +66,14 @@ export const DropdownItem = ({
 
   if (tag === 'a' && to) {
     return (
-      <a href={to} onClick={handleClick} className={className}>
+      <Link to={to} onClick={handleClick} className={className}>
         {children}
-      </a>
+      </Link>
     );
   }
 
   return (
-    <button onClick={handleClick} className={className}>
+    <button onClick={handleClick} className={className} type="button">
       {children}
     </button>
   );

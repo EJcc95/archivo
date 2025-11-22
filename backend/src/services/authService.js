@@ -9,10 +9,16 @@ const { Op } = require('sequelize');
 
 class AuthService {
 
-  async login(email, password, ipAddress, userAgent) {
-    // Buscar usuario
+  async login(identifier, password, ipAddress, userAgent) {
+    // Buscar usuario por email o nombre de usuario
     const user = await Usuario.findOne({
-      where: { email, estado: true },
+      where: {
+        [Op.or]: [
+          { email: identifier },
+          { nombre_usuario: identifier }
+        ],
+        estado: true
+      },
       include: [{ model: Rol }]
     });
 

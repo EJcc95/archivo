@@ -10,7 +10,21 @@ export interface Rol {
   id_rol: number;
   nombre_rol: string;
   descripcion?: string;
+}
+
+export interface Usuario {
+  id_usuario: number;
+  id_organizacion: number;
+  nombre_usuario: string;
+  nombres: string;
+  apellidos: string;
+  email: string;
+  id_rol: number;
+  id_area?: number;
   estado: boolean;
+  fecha_creacion?: string;
+  Rol?: Rol;
+  Area?: Area;
 }
 
 export interface Archivador {

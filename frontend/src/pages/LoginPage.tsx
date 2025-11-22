@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { useAuth } from '@/auth';
 import Button from '@/components/ui/Button';
@@ -18,6 +18,7 @@ interface ApiError {
 }
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,8 +34,7 @@ const LoginPage = () => {
 
     try {
       await login({ identifier, password });
-      // El AuthProvider maneja la navegación automáticamente
-      // No establecemos isLoading = false aquí porque el componente se desmontará
+      navigate('/dashboard');
     } catch (err: unknown) {
 
       let errorMessage = 'Error al iniciar sesión. Intenta nuevamente.';

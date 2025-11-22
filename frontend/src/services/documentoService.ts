@@ -25,7 +25,7 @@ export const documentoService = {
     return data.data;
   },
   restore: async (id: number) => {
-    const { data } = await api.post(`/documentos/${id}/restore`);
+    const { data } = await api.put(`/documentos/${id}/restore`);
     return data.data;
   },
   view: async (id: number) => {

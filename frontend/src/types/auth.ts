@@ -3,7 +3,9 @@ export interface User {
   nombre: string;
   apellidos: string;
   email: string;
-  rol: string;
+  rol: string; // Código del rol (ej: 'ADMIN', 'USER', etc.)
+  permisos?: string[]; // Lista de códigos de permisos del usuario
+  activo?: boolean;
 }
 
 export interface LoginResponse {
