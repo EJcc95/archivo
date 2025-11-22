@@ -8,11 +8,27 @@ class ReportService {
     const totalAreas = await Area.count();
     const totalUsuarios = await Usuario.count({ where: { estado: true } });
 
+    // Obtener documentos por estado
+    const documentsByState = await Documento.findAll({
+      attributes: [
+        [sequelize.col('EstadoDocumento.nombre_estado'), 'estado'],
+        [sequelize.fn('COUNT', sequelize.col('Documento.id_documento')), 'count']
+      ],
+      include: [{
+        model: EstadoDocumento,
+        attributes: []
+      }],
+      where: { eliminado: false },
+      group: ['EstadoDocumento.id_estado', 'EstadoDocumento.nombre_estado'],
+      raw: true
+    });
+
     return {
       totalDocumentos,
       totalArchivadores,
       totalAreas,
-      totalUsuarios
+      totalUsuarios,
+      documentsByState
     };
   }
 
