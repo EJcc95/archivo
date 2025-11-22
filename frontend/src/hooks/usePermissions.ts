@@ -8,15 +8,14 @@ export const usePermissions = () => {
    * @param permissionCode - Código del permiso a verificar
    * @returns true si tiene el permiso, false en caso contrario
    */
-  const hasPermission = (_permissionCode: string): boolean => {
+  const hasPermission = (permissionCode: string): boolean => {
     if (!user) return false;
 
     // Admin tiene todos los permisos
     if (user.rol === 'ADMIN') return true;
 
-    // Aquí puedes agregar lógica adicional para verificar permisos
-    // basado en la estructura de tu backend
-    return false;
+    // Check if user has the specific permission
+    return user.permisos?.includes(permissionCode) ?? false;
   };
 
   /**
@@ -30,8 +29,8 @@ export const usePermissions = () => {
     // Admin tiene todos los permisos
     if (user.rol === 'ADMIN') return true;
 
-    // Verificar si tiene al menos uno de los permisos
-    return permissionCodes.some(permission => hasPermission(permission));
+    // Check if user has any of the specified permissions
+    return permissionCodes.some(code => user.permisos?.includes(code) ?? false);
   };
 
   /**
@@ -46,7 +45,7 @@ export const usePermissions = () => {
     if (user.rol === 'ADMIN') return true;
 
     // Verificar si tiene todos los permisos
-    return permissionCodes.every(permission => hasPermission(permission));
+    return permissionCodes.every(code => user.permisos?.includes(code) ?? false);
   };
 
   return {
@@ -56,3 +55,5 @@ export const usePermissions = () => {
     isAdmin: user?.rol === 'ADMIN',
   };
 };
+
+export default usePermissions;

@@ -50,7 +50,7 @@ const DashboardPage = () => {
   const stats = [
     {
       title: 'Total Documentos',
-      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalDocuments?.toLocaleString() ?? '0'),
+      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalDocumentos?.toLocaleString() ?? '0'),
       icon: <IconFileText size={24} className="text-[#3f37c9]" strokeWidth={2} />,
       trend: (dashboardStats?.recentDocuments !== undefined && dashboardStats?.totalDocuments !== undefined)
         ? calculateTrend(dashboardStats.recentDocuments, dashboardStats.totalDocuments)
@@ -59,7 +59,7 @@ const DashboardPage = () => {
     },
     {
       title: 'Usuarios Activos',
-      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.activeUsers?.toString() ?? '0'),
+      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalUsuarios?.toString() ?? '0'),
       icon: <IconUsers size={24} className="text-green-600" strokeWidth={2} />,
       iconBg: 'bg-green-50',
     },
