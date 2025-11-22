@@ -1,0 +1,201 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+@import "tailwindcss";
+
+
+@theme {
+  --font-family: "Outfit", sans-serif;
+  --font-Quicksand: "Quicksand", sans-serif;
+}
+
+html, body {
+  font-family: var(--font-family);
+  font-style: normal;
+  font-optical-sizing: auto;
+}
+
+
+/* Tema personalizado con paleta de TailAdmin */
+@layer theme {
+  :root {
+    
+    /* Colores Brand (Primary) */
+    --color-brand-50: #ecf3ff;
+    --color-brand-100: #dde9ff;
+    --color-brand-200: #c2d6ff;
+    --color-brand-300: #9cb9ff;
+    --color-brand-400: #7592ff;
+    --color-brand-500: #032dff; /* Color base del proyecto */
+    --color-brand-600: #3641f5;
+    --color-brand-700: #2a31d8;
+    --color-brand-800: #252dae;
+    --color-brand-900: #262e89;
+    
+    /* Colores Gray */
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f2f4f7;
+    --color-gray-200: #e4e7ec;
+    --color-gray-300: #d0d5dd;
+    --color-gray-400: #98a2b3;
+    --color-gray-500: #667085;
+    --color-gray-600: #475467;
+    --color-gray-700: #344054;
+    --color-gray-800: #1d2939;
+    --color-gray-900: #101828;
+    
+    /* Colores Success */
+    --color-success-50: #ecfdf3;
+    --color-success-500: #12b76a;
+    --color-success-600: #039855;
+    
+    /* Colores Error */
+    --color-error-50: #fef3f2;
+    --color-error-500: #f04438;
+    --color-error-600: #d92d20;
+    
+    /* Colores Warning */
+    --color-warning-50: #fffaeb;
+    --color-warning-500: #f79009;
+    --color-warning-600: #dc6803;
+    
+    /* Sombras */
+    --shadow-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+    --shadow-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.10), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+    --shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.10), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+    --shadow-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+    
+    /* Border Radius */
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    /* Colores Verde Personalizados en Oklch */
+  --color-green-50: oklch(0.982 0.018 155.826);
+  --color-green-100: oklch(0.962 0.044 156.743);
+  --color-green-200: oklch(0.925 0.084 155.995);
+  --color-green-300: oklch(0.871 0.15 154.449);
+  --color-green-400: oklch(0.792 0.209 151.711);
+  --color-green-500: oklch(0.723 0.219 149.579);
+  --color-green-600: oklch(0.627 0.194 149.214);
+  --color-green-700: oklch(0.527 0.154 150.069);
+  --color-green-800: oklch(0.448 0.119 151.328);
+  --color-green-900: oklch(0.393 0.095 152.535);
+  --color-green-950: oklch(0.266 0.065 152.934);
+  }
+}
+
+/* Estilos base */
+@layer base {
+  body {
+    @apply relative text-base font-normal bg-gray-50 antialiased;
+    font-family: 'Open Sans', 'open-sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-gray-400;
+    font-family: 'Open Sans', 'open-sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Componentes de menú */
+@layer components {
+  .menu-item {
+    @apply relative flex items-center w-full gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200;
+  }
+  
+  .menu-item-active {
+    @apply bg-[#032dff] text-white shadow-lg;
+    box-shadow: 0px 4px 12px rgba(63, 55, 201, 0.25);
+  }
+  
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-50 hover:text-[#032dff];
+  }
+  
+  .menu-item-icon-active {
+    @apply text-white;
+  }
+  
+  .menu-item-icon-inactive {
+    @apply text-gray-400 group-hover:text-[#032dff];
+  }
+  
+  .menu-dropdown-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors;
+  }
+  
+  .menu-dropdown-item-active {
+    @apply bg-[#ecf3ff] text-[#032dff];
+  }
+  
+  .menu-dropdown-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100;
+  }
+}
+
+/* Utilidades personalizadas */
+@layer utilities {
+  /* Scrollbar personalizado */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-full;
+  }
+  
+  /* Animaciones */
+  .animate-in {
+    animation: slideIn 0.2s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .slide-in-from-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

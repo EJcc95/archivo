@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular azul -->
+  <circle cx="256" cy="256" r="256" fill="#1e40af"/>
+  
+  <!-- Folder/Archivador -->
+  <path d="M140 180C140 166.745 150.745 156 164 156H232L256 180H348C361.255 180 372 190.745 372 204V332C372 345.255 361.255 356 348 356H164C150.745 356 140 345.255 140 332V180Z" fill="#ffffff" fill-opacity="0.95"/>
+  
+  <!-- Detalles del folder -->
+  <path d="M140 204H372V216H140V204Z" fill="#60a5fa" fill-opacity="0.4"/>
+  
+  <!-- Documento dentro del folder -->
+  <rect x="180" y="240" width="152" height="80" rx="4" fill="#60a5fa" fill-opacity="0.3"/>
+  
+  <!-- Líneas del documento -->
+  <line x1="200" y1="260" x2="312" y2="260" stroke="#1e40af" stroke-width="4" stroke-linecap="round"/>
+  <line x1="200" y1="280" x2="280" y2="280" stroke="#1e40af" stroke-width="4" stroke-linecap="round"/>
+  <line x1="200" y1="300" x2="312" y2="300" stroke="#1e40af" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Letras AEM -->
+  <text x="256" y="420" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#ffffff" text-anchor="middle">AEM</text>
+</svg>
