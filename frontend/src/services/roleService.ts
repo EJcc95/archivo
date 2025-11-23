@@ -29,5 +29,9 @@ export const roleService = {
   getUsersByRole: async (roleId: number) => {
     const { data } = await api.get(`/roles/${roleId}/users`);
     return data.data;
+  },
+  assignPermissions: async (id: number, data: { permisos: number[] }) => {
+    const { data: response } = await api.put(`/roles/${id}`, data);
+    return response.data;
   }
 };

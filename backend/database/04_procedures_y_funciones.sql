@@ -4,7 +4,7 @@
 
 DELIMITER $$
 
-CREATE DEFINER=`root`@`localhost` FUNCTION `fn_obtener_estado_doc`(p_id_estado INT) RETURNS varchar(50) CHARSET utf8mb4 COLLATE utf8mb4_general_ci
+CREATE FUNCTION `fn_obtener_estado_doc`(p_id_estado INT) RETURNS varchar(50) CHARSET utf8mb4 COLLATE utf8mb4_general_ci
     READS SQL DATA
     DETERMINISTIC
 BEGIN
@@ -15,7 +15,7 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` FUNCTION `fn_verificar_capacidad_archivador`(p_id_archivador INT, p_nuevos_folios INT) RETURNS tinyint(1)
+CREATE FUNCTION `fn_verificar_capacidad_archivador`(p_id_archivador INT, p_nuevos_folios INT) RETURNS tinyint(1)
     READS SQL DATA
 BEGIN
     DECLARE v_capacidad_max INT;
@@ -45,7 +45,7 @@ DELIMITER ;
 -- =====================================================
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_crear_prestamo`(
+CREATE PROCEDURE `sp_crear_prestamo`(
     IN p_id_archivador INT,
     IN p_id_area_solicitante INT,
     IN p_fecha_devolucion DATE,
@@ -85,7 +85,7 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_eliminar_documento`(
+CREATE PROCEDURE `sp_eliminar_documento`(
     IN p_id_documento INT,
     IN p_id_usuario INT,
     IN p_motivo TEXT
@@ -102,7 +102,7 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_registrar_documento`(
+CREATE PROCEDURE `sp_registrar_documento`(
     IN p_nombre_doc VARCHAR(100),
     IN p_asunto TEXT,
     IN p_fecha_doc DATE,
