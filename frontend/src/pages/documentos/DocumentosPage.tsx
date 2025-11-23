@@ -1,6 +1,7 @@
 /**
  * Documentos Page
  * Lista y gestión de documentos con upload de archivos
+ * UPDATED: Using new Badge component and improved DataTable
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +16,8 @@ import {
   IconEye,
   IconRestore,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, SearchableSelect } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, SearchableSelect, Badge, DataTable } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { documentoService, areaService } from '@/services';
 import { usePermissions } from '@/hooks';
 import { useToast } from '@/components/ui/use-toast';
@@ -51,7 +53,6 @@ const DocumentosPage = () => {
   });
 
   const documentos = Array.isArray(documentosData) ? documentosData : [];
-  console.log('Documentos Data:', documentosData);
   const areas = Array.isArray(areasData) ? areasData : [];
 
   // Options for SearchableSelect
@@ -147,20 +148,140 @@ const DocumentosPage = () => {
     setCurrentPage(1);
   };
 
+  // Badge helper
   const getEstadoBadge = (idEstado: number) => {
-    const estados: Record<number, { label: string; class: string }> = {
-      1: { label: 'Registrado', class: 'bg-blue-100 text-blue-800' },
-      2: { label: 'En Proceso', class: 'bg-yellow-100 text-yellow-800' },
-      3: { label: 'Archivado', class: 'bg-green-100 text-green-800' },
-      4: { label: 'Prestado', class: 'bg-purple-100 text-purple-800' },
+    const estados: Record<number, { label: string; variant: 'success' | 'warning' | 'info' | 'primary' }> = {
+      1: { label: 'Registrado', variant: 'info' },
+      2: { label: 'En Proceso', variant: 'warning' },
+      3: { label: 'Archivado', variant: 'success' },
+      4: { label: 'Prestado', variant: 'primary' },
     };
-    const estado = estados[idEstado] || { label: 'Desconocido', class: 'bg-gray-100 text-gray-800' };
-    return (
-      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${estado.class}`}>
-        {estado.label}
-      </span>
-    );
+    const estado = estados[idEstado] || { label: 'Desconocido', variant: 'info' as const };
+    return <Badge variant={estado.variant}>{estado.label}</Badge>;
   };
+
+  // DataTable columns
+  const columns: Column<any>[] = [
+    {
+      header: 'Documento',
+      id: 'documento',
+      cell: ({ row }) => (
+        <div>
+          <div 
+            className="font-medium text-gray-900 hover:text-[#032DFF] cursor-pointer"
+            onClick={() => navigate(`/documentos/${row.original.id_documento}`)}
+          >
+            {row.original.nombre_documento}
+          </div>
+          <div className="text-sm text-gray-500 truncate max-w-md">{row.original.asunto}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Área Origen',
+      accessorKey: 'areaOrigen',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.areaOrigen?.nombre_area || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Tipo',
+      accessorKey: 'TipoDocumento',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.TipoDocumento?.nombre_tipo || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Archivador',
+      accessorKey: 'Archivador',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.Archivador?.nombre_archivador || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Fecha',
+      accessorKey: 'fecha_documento',
+      sortable: true,
+      align: 'center',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {new Date(row.original.fecha_documento).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      header: 'Folios',
+      accessorKey: 'numero_folios',
+      align: 'center',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-gray-900">{row.original.numero_folios}</span>
+      ),
+    },
+    {
+      header: 'Estado',
+      accessorKey: 'id_estado',
+      align: 'center',
+      cell: ({ row }) => getEstadoBadge(row.original.id_estado),
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      align: 'center',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          {!row.original.eliminado ? (
+            <>
+              {row.original.ruta_archivo_digital && (
+                <button
+                  onClick={() => navigate(`/documentos/${row.original.id_documento}`)}
+                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  title="Ver documento"
+                >
+                  <IconEye size={18} />
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => navigate(`/documentos/${row.original.id_documento}/editar`)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Editar"
+                >
+                  <IconEdit size={18} />
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={() => handleDelete(row.original.id_documento, row.original.nombre_documento)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Eliminar"
+                >
+                  <IconTrash size={18} />
+                </button>
+              )}
+            </>
+          ) : (
+            canDelete && (
+              <button
+                onClick={() => handleRestore(row.original.id_documento)}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                title="Restaurar"
+              >
+                <IconRestore size={18} />
+              </button>
+            )
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
     <PageContainer>
@@ -191,7 +312,7 @@ const DocumentosPage = () => {
               placeholder="Buscar por nombre o asunto..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-[42px]"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
 
@@ -214,153 +335,26 @@ const DocumentosPage = () => {
           </div>
 
           {canDelete && (
-            <label className="flex items-center gap-2 text-sm text-gray-700 whitespace-nowrap h-[42px]">
+            <label className="flex items-center gap-2 text-sm text-gray-700 whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={showDeleted}
                 onChange={(e) => { setShowDeleted(e.target.checked); handleFilterChange(); }}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
               />
               Mostrar eliminados
             </label>
           )}
         </div>
 
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : paginatedDocumentos.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {searchTerm || filterArea || filterEstado ? 'No se encontraron documentos' : 'No hay documentos registrados'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Documento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Área Origen
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Archivador
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Folios
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedDocumentos.map((doc: any) => (
-                  <tr key={doc.id_documento} className={`hover:bg-gray-50 ${doc.eliminado ? 'opacity-50' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div 
-                        className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer"
-                        onClick={() => {
-                          if (doc.id_documento) {
-                            navigate(`/documentos/${doc.id_documento}`);
-                          } else {
-                            console.error('Documento ID is missing:', doc);
-                          }
-                        }}
-                      >
-                        {doc.nombre_documento}
-                      </div>
-                      <div className="text-sm text-gray-500 truncate max-w-md">{doc.asunto}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.areaOrigen?.nombre_area || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.TipoDocumento?.nombre_tipo || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.Archivador?.nombre_archivador || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm text-gray-600">
-                        {new Date(doc.fecha_documento).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm font-medium text-gray-900">{doc.numero_folios}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {getEstadoBadge(doc.id_estado)}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {!doc.eliminado ? (
-                          <>
-                            {doc.ruta_archivo_digital && (
-                              <button
-                                onClick={() => navigate(`/documentos/${doc.id_documento}`)}
-                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                title="Ver documento"
-                              >
-                                <IconEye size={18} />
-                              </button>
-                            )}
-                            {canEdit && (
-                              <button
-                                onClick={() => navigate(`/documentos/${doc.id_documento}/editar`)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Editar"
-                              >
-                                <IconEdit size={18} />
-                              </button>
-                            )}
-                            {canDelete && (
-                              <button
-                                onClick={() => handleDelete(doc.id_documento, doc.nombre_documento)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Eliminar"
-                              >
-                                <IconTrash size={18} />
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          canDelete && (
-                            <button
-                              onClick={() => handleRestore(doc.id_documento)}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Restaurar"
-                            >
-                              <IconRestore size={18} />
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={paginatedDocumentos}
+          isLoading={isLoading}
+          emptyMessage={searchTerm || filterArea || filterEstado ? 'No se encontraron documentos' : 'No hay documentos registrados'}
+          rowClassName={(row) => row.eliminado ? 'opacity-50' : ''}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (

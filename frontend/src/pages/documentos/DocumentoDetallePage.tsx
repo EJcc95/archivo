@@ -1,6 +1,7 @@
 /**
  * Documento Detalle Page
  * Muestra los detalles del documento y visualizador de PDF
+ * UPDATED: Improved design with Card, Badge components and better visual hierarchy
  */
 
 import { useParams, useNavigate } from 'react-router-dom';
@@ -12,10 +13,11 @@ import {
   IconCalendar,
   IconFolder,
   IconArchive,
-  IconEye,
   IconFileDescription,
+  IconHash,
+  IconClock,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader } from '@/components/ui';
+import { PageContainer, PageHeader, Card, CardHeader, CardBody, Badge } from '@/components/ui';
 import { documentoService } from '@/services';
 import { usePermissions } from '@/hooks';
 
@@ -32,25 +34,21 @@ const DocumentoDetallePage = () => {
   });
 
   const getEstadoBadge = (idEstado: number) => {
-    const estados: Record<number, { label: string; class: string }> = {
-      1: { label: 'Registrado', class: 'bg-blue-100 text-blue-800' },
-      2: { label: 'En Proceso', class: 'bg-yellow-100 text-yellow-800' },
-      3: { label: 'Archivado', class: 'bg-green-100 text-green-800' },
-      4: { label: 'Prestado', class: 'bg-purple-100 text-purple-800' },
+    const estados: Record<number, { label: string; variant: 'success' | 'warning' | 'info' | 'primary' }> = {
+      1: { label: 'Registrado', variant: 'info' },
+      2: { label: 'En Proceso', variant: 'warning' },
+      3: { label: 'Archivado', variant: 'success' },
+      4: { label: 'Prestado', variant: 'primary' },
     };
-    const estado = estados[idEstado] || { label: 'Desconocido', class: 'bg-gray-100 text-gray-800' };
-    return (
-      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${estado.class}`}>
-        {estado.label}
-      </span>
-    );
+    const estado = estados[idEstado] || { label: 'Desconocido', variant: 'info' as const };
+    return <Badge variant={estado.variant}>{estado.label}</Badge>;
   };
 
   if (isLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032DFF]"></div>
         </div>
       </PageContainer>
     );
@@ -91,158 +89,241 @@ const DocumentoDetallePage = () => {
           {/* Información del Documento */}
           <div className="lg:col-span-1 space-y-6">
             {/* Card: Información General */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <IconFileDescription size={20} />
-                Información General
-              </h3>
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Estado</dt>
-                  <dd className="mt-1">{getEstadoBadge(documento.id_estado)}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Asunto</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{documento.asunto}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500 flex items-center gap-1">
-                    <IconCalendar size={16} />
-                    Fecha del Documento
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {new Date(documento.fecha_documento).toLocaleDateString()}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Número de Folios</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{documento.numero_folios}</dd>
-                </div>
-              </dl>
-            </div>
+            <Card>
+              <CardHeader
+                title="Información General"
+                subtitle="Datos principales del documento"
+              />
+              <CardBody>
+                <dl className="space-y-4">
+                  <div>
+                    <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5">Estado</dt>
+                    <dd>{getEstadoBadge(documento.id_estado)}</dd>
+                  </div>
+                  
+                  <div className="border-t border-gray-100 pt-4">
+                    <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5">Asunto</dt>
+                    <dd className="text-sm text-gray-900">{documento.asunto}</dd>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                    <div>
+                      <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5 flex items-center gap-1">
+                        <IconCalendar size={14} />
+                        Fecha
+                      </dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {new Date(documento.fecha_documento).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5 flex items-center gap-1">
+                        <IconHash size={14} />
+                        Folios
+                      </dt>
+                      <dd className="text-sm font-medium text-gray-900">{documento.numero_folios}</dd>
+                    </div>
+                  </div>
+                </dl>
+              </CardBody>
+            </Card>
 
             {/* Card: Ubicación */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <IconFolder size={20} />
-                Ubicación
-              </h3>
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Área de Origen</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {documento.areaOrigen?.nombre_area || '-'}
-                  </dd>
-                </div>
-                {documento.areaDestino && (
+            <Card>
+              <CardHeader title="Ubicación y Clasificación" />
+              <CardBody>
+                <dl className="space-y-4">
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Área de Destino</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {documento.areaDestino?.nombre_area}
-                    </dd>
-                  </div>
-                )}
-                {documento.archivador && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500 flex items-center gap-1">
-                      <IconArchive size={16} />
-                      Archivador
+                    <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5 flex items-center gap-1">
+                      <IconFolder size={14} />
+                      Área de Origen
                     </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {documento.archivador?.nombre_archivador}
-                      {documento.archivador?.ubicacion_fisica && (
-                        <span className="block text-xs text-gray-500 mt-1">
-                          {documento.archivador.ubicacion_fisica}
-                        </span>
-                      )}
+                    <dd className="text-sm font-medium text-gray-900">
+                      {documento.areaOrigen?.nombre_area || '-'}
                     </dd>
                   </div>
-                )}
-              </dl>
-            </div>
+                  
+                  {documento.areaDestino && (
+                    <div className="border-t border-gray-100 pt-4">
+                      <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5">
+                        Área de Destino
+                      </dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {documento.areaDestino?.nombre_area}
+                      </dd>
+                    </div>
+                  )}
+                  
+                  {documento.TipoDocumento && (
+                    <div className="border-t border-gray-100 pt-4">
+                      <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5">
+                        Tipo de Documento
+                      </dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {documento.TipoDocumento?.nombre_tipo}
+                      </dd>
+                    </div>
+                  )}
+                  
+                  {documento.Archivador && (
+                    <div className="border-t border-gray-100 pt-4">
+                      <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5 flex items-center gap-1">
+                        <IconArchive size={14} />
+                        Archivador
+                      </dt>
+                      <dd>
+                        <div className="text-sm font-medium text-gray-900">
+                          {documento.Archivador?.nombre_archivador}
+                        </div>
+                        {documento.Archivador?.ubicacion_fisica && (
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            📍 {documento.Archivador.ubicacion_fisica}
+                          </div>
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </CardBody>
+            </Card>
 
             {/* Card: Estadísticas */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <IconEye size={20} />
-                Estadísticas
-              </h3>
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Consultas</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{documento.numero_consultas || 0} veces</dd>
-                </div>
-                {documento.fecha_ultima_consulta && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Última Consulta</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {new Date(documento.fecha_ultima_consulta).toLocaleString()}
+            <Card>
+              <CardHeader
+                title="Estadísticas"
+                subtitle="Historial de consultas"
+              />
+              <CardBody>
+                <dl className="space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <dt className="text-xs font-medium text-gray-500 uppercase mb-1">
+                      Total de Consultas
+                    </dt>
+                    <dd className="text-2xl font-bold text-[#032DFF]">
+                      {documento.numero_consultas || 0}
                     </dd>
                   </div>
-                )}
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Fecha de Registro</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {new Date(documento.fecha_registro_sistema).toLocaleString()}
-                  </dd>
-                </div>
-              </dl>
-            </div>
+                  
+                  {documento.fecha_ultima_consulta && (
+                    <div className="border-t border-gray-100 pt-4">
+                      <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5 flex items-center gap-1">
+                        <IconClock size={14} />
+                        Última Consulta
+                      </dt>
+                      <dd className="text-sm text-gray-900">
+                        {new Date(documento.fecha_ultima_consulta).toLocaleString('es-ES', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </dd>
+                    </div>
+                  )}
+                  
+                  <div className="border-t border-gray-100 pt-4">
+                    <dt className="text-xs font-medium text-gray-500 uppercase mb-1.5">
+                      Fecha de Registro
+                    </dt>
+                    <dd className="text-sm text-gray-900">
+                      {new Date(documento.fecha_registro_sistema).toLocaleString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </dd>
+                  </div>
+                </dl>
+              </CardBody>
+            </Card>
 
             {documento.observaciones && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Observaciones</h3>
-                <p className="text-sm text-gray-700">{documento.observaciones}</p>
-              </div>
+              <Card>
+                <CardHeader title="Observaciones" />
+                <CardBody>
+                  <p className="text-sm text-gray-700 leading-relaxed">{documento.observaciones}</p>
+                </CardBody>
+              </Card>
             )}
           </div>
 
           {/* Visualizador de PDF */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Documento Digital</h3>
-                {documento.ruta_archivo_digital && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const blob = await documentoService.download(documento.id_documento);
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${documento.nombre_documento}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                      } catch (error) {
-                        console.error('Error downloading:', error);
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <IconDownload size={16} />
-                    Descargar PDF
-                  </button>
-                )}
-              </div>
+            <Card className="h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <IconFileDescription size={20} className="text-gray-600" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Documento Digital</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {documento.ruta_archivo_digital ? 'Vista previa del archivo PDF' : 'Sin archivo adjunto'}
+                      </p>
+                    </div>
+                  </div>
+                  {documento.ruta_archivo_digital && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const blob = await documentoService.download(documento.id_documento);
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${documento.nombre_documento}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        } catch (error) {
+                          console.error('Error downloading:', error);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#032DFF] text-white text-sm rounded-lg hover:bg-[#0225cc] transition-colors"
+                    >
+                      <IconDownload size={16} />
+                      Descargar PDF
+                    </button>
+                  )}
+                </div>
+              </CardHeader>
 
-              {documento.ruta_archivo_digital ? (
-                <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-                  <iframe
-                    src={documentoService.getViewUrl(documento.id_documento)}
-                    className="w-full h-[800px]"
-                    title={documento.nombre_documento}
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                  <IconFileText size={64} className="mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No hay archivo digital disponible</p>
-                  <p className="text-sm mt-2">Este documento no tiene un archivo PDF adjunto</p>
-                </div>
-              )}
-            </div>
+              <CardBody className="p-0">
+                {documento.ruta_archivo_digital ? (
+                  <div className="border-t border-gray-200">
+                    <iframe
+                      src={documentoService.getViewUrl(documento.id_documento)}
+                      className="w-full h-[800px]"
+                      title={documento.nombre_documento}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <div className="p-6 bg-gray-50 rounded-full mb-4">
+                      <IconFileText size={64} className="text-gray-300" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-600">No hay archivo digital disponible</p>
+                    <p className="text-sm text-gray-500 mt-2">Este documento no tiene un archivo PDF adjunto</p>
+                    {canEdit && (
+                      <button
+                        onClick={() => navigate(`/documentos/${id}/editar`)}
+                        className="mt-6 inline-flex items-center gap-2 px-4 py-2 text-sm text-[#032DFF] hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <IconEdit size={16} />
+                        Editar y adjuntar archivo
+                      </button>
+                    )}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
           </div>
         </div>
       </div>

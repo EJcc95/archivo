@@ -1,19 +1,19 @@
 /**
  * Rol Nuevo Page
  * Formulario para crear nuevos roles
+ * UPDATED: Using Card and FormField components
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconShieldCheck,
-  IconAlertCircle,
+  IconDeviceFloppy,
+  IconArrowLeft,
 } from '@tabler/icons-react';
 import { roleService } from '@/services/roleService';
 import type { CreateRolRequest } from '@/types';
-import Button from '@/components/ui/Button';
-import PageContainer from '@/components/ui/PageContainer';
-import PageHeader from '@/components/ui/PageHeader';
+import { PageContainer, PageHeader, Card, CardHeader, CardBody, CardFooter, FormField } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -109,109 +109,96 @@ const RolNuevoPage = () => {
         icon={<IconShieldCheck  size={32} className="text-white" strokeWidth={1.5} />}
         backButton={{
           onClick: () => navigate('/roles'),
-          label: "Roles",
+          label: "Volver a roles",
         }}
       />
 
       <div className="p-6 lg:p-8 space-y-6">
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Información del rol */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <IconShieldCheck size={20} />
-            Información del Rol
-          </h2>
-          <div className="space-y-4">
-            {/* Nombre del rol */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre del Rol <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="nombre_rol"
-                value={formData.nombre_rol}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#032dff]/80 ${
-                  errors.nombre_rol ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Ej: Administrador, Supervisor, Operador"
+        <div className="max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Información sobre permisos */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <IconShieldCheck size={20} className="text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-blue-900 font-medium mb-1">
+                    Asignación de permisos
+                  </p>
+                  <p className="text-sm text-blue-800">
+                    Después de crear el rol, podrás asignarle los permisos específicos desde la 
+                    página de detalle o desde el listado de roles usando el botón de "Gestionar permisos".
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader
+                title="Información del Rol"
+                subtitle="Datos básicos e identificación"
               />
-              {errors.nombre_rol && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <IconAlertCircle size={16} />
-                  {errors.nombre_rol}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">
-                El nombre debe ser descriptivo y único
-              </p>
-            </div>
+              <CardBody>
+                {/* Nombre del rol */}
+                <FormField
+                  label="Nombre del Rol"
+                  required
+                  error={errors.nombre_rol}
+                  help="El nombre debe ser descriptivo y único"
+                  htmlFor="nombre_rol"
+                >
+                  <input
+                    type="text"
+                    id="nombre_rol"
+                    name="nombre_rol"
+                    value={formData.nombre_rol}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                    placeholder="Ej: Administrador, Supervisor, Operador"
+                  />
+                </FormField>
 
-            {/* Descripción */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Descripción
-              </label>
-              <textarea
-                name="descripcion"
-                value={formData.descripcion}
-                onChange={handleInputChange}
-                rows={4}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#032dff]/80 ${
-                  errors.descripcion ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Describe las responsabilidades y alcance de este rol..."
-              />
-              {errors.descripcion && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <IconAlertCircle size={16} />
-                  {errors.descripcion}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">
-                Máximo 500 caracteres. {formData.descripcion?.length || 0}/500
-              </p>
-            </div>
-          </div>
+                {/* Descripción */}
+                <FormField
+                  label="Descripción"
+                  error={errors.descripcion}
+                  help={`Máximo 500 caracteres. ${formData.descripcion?.length || 0}/500`}
+                  htmlFor="descripcion"
+                  className="mt-6"
+                >
+                  <textarea
+                    id="descripcion"
+                    name="descripcion"
+                    value={formData.descripcion}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
+                    placeholder="Describe las responsabilidades y alcance de este rol..."
+                  />
+                </FormField>
+              </CardBody>
+              <CardFooter>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                  >
+                    <IconDeviceFloppy size={18} />
+                    {loading ? 'Creando...' : 'Crear Rol'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/roles')}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                  >
+                    <IconArrowLeft size={18} />
+                    Cancelar
+                  </button>
+                </div>
+              </CardFooter>
+            </Card>
+          </form>
         </div>
-
-        {/* Información sobre permisos */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <IconShieldCheck size={20} className="text-blue-600 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm text-blue-900 font-medium mb-1">
-                Asignación de permisos
-              </p>
-              <p className="text-sm text-blue-800">
-                Después de crear el rol, podrás asignarle los permisos específicos desde la 
-                página de detalle o desde el listado de roles usando el botón de "Gestionar permisos".
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Botones de acción */}
-        <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/roles')}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            isLoading={loading}
-            disabled={loading}
-          >
-            {loading ? 'Creando...' : 'Crear Rol'}
-          </Button>
-        </div>
-        </form>
       </div>
     </PageContainer>
   );

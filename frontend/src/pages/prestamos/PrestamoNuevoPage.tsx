@@ -15,9 +15,15 @@ const PrestamoNuevoPage = () => {
   const [archivadores, setArchivadores] = useState<Archivador[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
 
-  const [formData, setFormData] = useState({
-    id_archivador: '',
-    id_area_solicitante: '',
+  const [formData, setFormData] = useState<{
+    id_archivador: string | number | undefined;
+    id_area_solicitante: string | number | undefined;
+    fecha_devolucion_esperada: string;
+    motivo: string;
+    observaciones: string;
+  }>({
+    id_archivador: undefined,
+    id_area_solicitante: undefined,
     fecha_devolucion_esperada: '',
     motivo: '',
     observaciones: ''
@@ -60,8 +66,12 @@ const PrestamoNuevoPage = () => {
     }
 
     // Validate that IDs are valid numbers
-    const archivadorId = Number(formData.id_archivador);
-    const areaId = Number(formData.id_area_solicitante);
+    const archivadorId = typeof formData.id_archivador === 'number' 
+      ? formData.id_archivador 
+      : Number(formData.id_archivador);
+    const areaId = typeof formData.id_area_solicitante === 'number'
+      ? formData.id_area_solicitante
+      : Number(formData.id_area_solicitante);
     
     if (isNaN(archivadorId) || archivadorId <= 0 || isNaN(areaId) || areaId <= 0) {
       toast({
@@ -130,7 +140,7 @@ const PrestamoNuevoPage = () => {
                       label: `${arch.nombre_archivador} - ${arch.descripcion || 'Sin descripción'}`,
                     }))}
                     value={formData.id_archivador}
-                    onChange={(value) => setFormData({ ...formData, id_archivador: String(value) })}
+                    onChange={(value) => setFormData({ ...formData, id_archivador: value })}
                     placeholder="Seleccione un archivador"
                   />
                 </div>
@@ -146,7 +156,7 @@ const PrestamoNuevoPage = () => {
                       label: area.nombre_area,
                     }))}
                     value={formData.id_area_solicitante}
-                    onChange={(value) => setFormData({ ...formData, id_area_solicitante: String(value) })}
+                    onChange={(value) => setFormData({ ...formData, id_area_solicitante: value })}
                     placeholder="Seleccione el área solicitante"
                   />
                 </div>

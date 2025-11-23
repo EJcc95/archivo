@@ -1,6 +1,7 @@
 /**
  * Documentos Huérfanos Page
  * Muestra documentos sin archivador asignado con opción de asignarles uno
+ * UPDATED: Using DataTable, Badge, and improved modal design
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +13,8 @@ import {
   IconFolderPlus,
   IconX,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, SearchableSelect } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, SearchableSelect, DataTable, Badge, Card, CardHeader, CardBody, CardFooter, FormField } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { documentoService, archivadorService } from '@/services';
 import { usePermissions } from '@/hooks';
 import { useToast } from '@/components/ui/use-toast';
@@ -120,9 +122,74 @@ const DocumentosHuerfanosPage = () => {
       )
       .map((arch: any) => ({
         value: arch.id_archivador,
-        label: `${arch.nombre_archivador} (${arch.total_folios} folios)`,
+        label: `${arch.nombre_archivador}`,
+        description: `${arch.total_folios} folios - ${arch.estado}`,
       }));
   };
+
+  // DataTable columns
+  const columns: Column<any>[] = [
+    {
+      header: 'Documento',
+      id: 'documento',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-gray-900">{row.original.nombre_documento}</div>
+          <div className="text-sm text-gray-500 truncate max-w-md">{row.original.asunto}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Área Origen',
+      accessorKey: 'areaOrigen',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.areaOrigen?.nombre_area || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Tipo',
+      accessorKey: 'TipoDocumento',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.TipoDocumento?.nombre_tipo || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Folios',
+      accessorKey: 'numero_folios',
+      align: 'center',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-gray-900">{row.original.numero_folios}</span>
+      ),
+    },
+    {
+      header: 'Estado',
+      id: 'estado',
+      align: 'center',
+      cell: () => (
+        <Badge variant="warning">Sin archivador</Badge>
+      ),
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      align: 'center',
+      cell: ({ row }) => (
+        <button
+          onClick={() => setSelectedDocumento(row.original)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+        >
+          <IconFolderPlus size={16} />
+          Asignar
+        </button>
+      ),
+    },
+  ];
 
   if (!canEdit) {
     return (
@@ -163,88 +230,30 @@ const DocumentosHuerfanosPage = () => {
               placeholder="Buscar por nombre o asunto..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent h-[42px]"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
         </div>
 
         {/* Stats */}
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <IconAlertCircle size={20} className="text-orange-600" />
-            <p className="text-sm text-orange-800">
-              Hay <strong>{orphanedDocumentos.length}</strong> documento(s) sin archivador asignado
-            </p>
-          </div>
-        </div>
-
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-          </div>
-        ) : paginatedDocumentos.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {searchTerm ? 'No se encontraron documentos' : 'No hay documentos sin archivador'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Documento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Área Origen
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Folios
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedDocumentos.map((doc: any) => (
-                  <tr key={doc.id_documento} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{doc.nombre_documento}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-md">{doc.asunto}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.areaOrigen?.nombre_area || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.TipoDocumento?.nombre_tipo || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm font-medium text-gray-900">{doc.numero_folios}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => setSelectedDocumento(doc)}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                        title="Asignar archivador"
-                      >
-                        <IconFolderPlus size={18} />
-                        Asignar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {orphanedDocumentos.length > 0 && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <IconAlertCircle size={20} className="text-orange-600" />
+              <p className="text-sm text-orange-800">
+                Hay <strong>{orphanedDocumentos.length}</strong> documento(s) sin archivador asignado
+              </p>
+            </div>
           </div>
         )}
+
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={paginatedDocumentos}
+          isLoading={isLoading}
+          emptyMessage={searchTerm ? 'No se encontraron documentos' : 'No hay documentos sin archivador'}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (
@@ -261,72 +270,81 @@ const DocumentosHuerfanosPage = () => {
       {/* Modal para asignar archivador */}
       {selectedDocumento && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Asignar Archivador
-              </h3>
-              <button
-                onClick={() => {
-                  setSelectedDocumento(null);
-                  setSelectedArchivador('');
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <IconX size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">Documento:</p>
-                <p className="text-sm text-gray-900">{selectedDocumento.nombre_documento}</p>
-              </div>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+            <Card padding="none">
+              <CardHeader>
+                <div className="flex justify-between items-center px-6 py-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Asignar Archivador
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setSelectedDocumento(null);
+                      setSelectedArchivador('');
+                    }}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <IconX size={20} />
+                  </button>
+                </div>
+              </CardHeader>
+              
+              <CardBody className="px-6 py-4 space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Documento</p>
+                    <p className="text-sm font-medium text-gray-900 mt-0.5">{selectedDocumento.nombre_documento}</p>
+                  </div>
 
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">Tipo:</p>
-                <p className="text-sm text-gray-600">{selectedDocumento.TipoDocumento?.nombre_tipo}</p>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">Tipo</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{selectedDocumento.TipoDocumento?.nombre_tipo}</p>
+                    </div>
 
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">Área:</p>
-                <p className="text-sm text-gray-600">{selectedDocumento.areaOrigen?.nombre_area}</p>
-              </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase">Área</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{selectedDocumento.areaOrigen?.nombre_area}</p>
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seleccionar Archivador *
-                </label>
-                <SearchableSelect
-                  options={getAvailableArchivadores(selectedDocumento)}
-                  value={selectedArchivador}
-                  onChange={setSelectedArchivador}
-                  placeholder="Seleccione un archivador"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Solo se muestran archivadores compatibles con el tipo de documento y área
-                </p>
-              </div>
-            </div>
+                <FormField
+                  label="Seleccionar Archivador"
+                  required
+                  help="Solo se muestran archivadores compatibles con el tipo de documento, área y que estén abiertos"
+                >
+                  <SearchableSelect
+                    options={getAvailableArchivadores(selectedDocumento)}
+                    value={selectedArchivador}
+                    onChange={setSelectedArchivador}
+                    placeholder="Buscar archivador compatible..."
+                    emptyMessage="No hay archivadores compatibles disponibles"
+                  />
+                </FormField>
+              </CardBody>
 
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setSelectedDocumento(null);
-                  setSelectedArchivador('');
-                }}
-                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAssignArchivador}
-                disabled={!selectedArchivador || updateMutation.isPending}
-                className="px-4 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg transition-colors"
-              >
-                {updateMutation.isPending ? 'Asignando...' : 'Asignar'}
-              </button>
-            </div>
+              <CardFooter>
+                <div className="flex justify-end gap-3 px-6 py-4">
+                  <button
+                    onClick={() => {
+                      setSelectedDocumento(null);
+                      setSelectedArchivador('');
+                    }}
+                    className="px-4 py-2 text-sm text-gray-700 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleAssignArchivador}
+                    disabled={!selectedArchivador || updateMutation.isPending}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg transition-colors"
+                  >
+                    {updateMutation.isPending ? 'Asignando...' : 'Asignar Archivador'}
+                  </button>
+                </div>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       )}

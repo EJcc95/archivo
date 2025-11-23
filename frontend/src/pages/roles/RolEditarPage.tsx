@@ -1,16 +1,18 @@
 /**
  * Rol Editar Page
  * Formulario para editar roles existentes
+ * UPDATED: Using React Query and standard UI components
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   IconShieldCheck,
   IconAlertCircle,
 } from '@tabler/icons-react';
 import { roleService } from '@/services/roleService';
-import type { UpdateRolRequest, RolConPermisos } from '@/types';
+import type { UpdateRolRequest } from '@/types';
 import Button from '@/components/ui/Button';
 import PageContainer from '@/components/ui/PageContainer';
 import PageHeader from '@/components/ui/PageHeader';
@@ -22,14 +24,12 @@ const RolEditarPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { hasPermission } = usePermissions();
+  const queryClient = useQueryClient();
 
   // Permisos
   const canAdmin = hasPermission('users_admin');
 
   // Estados
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [rol, setRol] = useState<RolConPermisos | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Form data
@@ -48,34 +48,36 @@ const RolEditarPage = () => {
   }, [canAdmin]);
 
   // Cargar datos del rol
+  const { data: rol, isLoading: loadingData } = useQuery({
+    queryKey: ['rol', id],
+    queryFn: () => roleService.getById(Number(id)),
+    enabled: !!id && canAdmin,
+  });
+
+  // Actualizar form data cuando carga el rol
   useEffect(() => {
-    if (!id) {
-      toast.error('ID de rol no válido');
-      navigate('/roles');
-      return;
+    if (rol) {
+      setFormData({
+        nombre_rol: rol.nombre_rol,
+        descripcion: rol.descripcion || '',
+      });
     }
+  }, [rol]);
 
-    const loadRol = async () => {
-      try {
-        setLoadingData(true);
-        const data = await roleService.getById(Number(id));
-        setRol(data);
-        setFormData({
-          nombre_rol: data.nombre_rol,
-          descripcion: data.descripcion || '',
-        });
-      } catch (error) {
-        console.error('Error loading rol:', error);
-        toast.error('Error al cargar el rol');
-        navigate('/roles');
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    loadRol();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateRolRequest) => roleService.update(Number(id), data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['rol', id] });
+      toast.success('Rol actualizado exitosamente');
+      navigate('/roles');
+    },
+    onError: (error) => {
+      console.error('Error updating role:', error);
+      toast.error('Error al actualizar el rol');
+    },
+  });
 
   // Manejar cambios en inputs
   const handleInputChange = (
@@ -113,7 +115,7 @@ const RolEditarPage = () => {
   };
 
   // Enviar formulario
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -123,17 +125,7 @@ const RolEditarPage = () => {
 
     if (!id) return;
 
-    try {
-      setLoading(true);
-      await roleService.update(Number(id), formData);
-      toast.success('Rol actualizado exitosamente');
-      navigate('/roles');
-    } catch (error) {
-      console.error('Error updating role:', error);
-      toast.error('Error al actualizar el rol');
-    } finally {
-      setLoading(false);
-    }
+    updateMutation.mutate(formData);
   };
 
   if (loadingData) {
@@ -272,16 +264,16 @@ const RolEditarPage = () => {
             type="button"
             variant="secondary"
             onClick={() => navigate('/roles')}
-            disabled={loading}
+            disabled={updateMutation.isPending}
           >
             Cancelar
           </Button>
           <Button
             type="submit"
-            isLoading={loading}
-            disabled={loading}
+            isLoading={updateMutation.isPending}
+            disabled={updateMutation.isPending}
           >
-            {loading ? 'Guardando...' : 'Guardar Cambios'}
+            {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
           </Button>
         </div>
         </form>

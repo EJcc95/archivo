@@ -36,6 +36,7 @@ const SearchableSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +53,19 @@ const SearchableSelect = ({
   });
 
   // Encontrar la opción seleccionada
-  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedOption = options.find((opt) => String(opt.value) === String(value));
+
+  // Calcular posición del dropdown
+  const updateDropdownPosition = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  };
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -69,10 +82,23 @@ const SearchableSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Focus en input de búsqueda al abrir
+  // Focus en input de búsqueda al abrir y actualizar posición
   useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+    if (isOpen) {
+      updateDropdownPosition();
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+      
+      // Actualizar posición en scroll y resize
+      const handleUpdate = () => updateDropdownPosition();
+      window.addEventListener('scroll', handleUpdate, true);
+      window.addEventListener('resize', handleUpdate);
+      
+      return () => {
+        window.removeEventListener('scroll', handleUpdate, true);
+        window.removeEventListener('resize', handleUpdate);
+      };
     }
   }, [isOpen]);
 
@@ -126,62 +152,71 @@ const SearchableSelect = ({
   // Limpiar selección
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange("");
+    onChange(undefined as any);
     setSearchTerm("");
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Select trigger */}
-      <button
-        type="button"
-        name={name}
-        disabled={disabled}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
-        className={`
-          w-full px-3 py-2 text-left border rounded-lg 
-          focus:outline-none focus:ring-1 focus:ring-[#032dff]
-          transition-colors flex items-center justify-between gap-2
-          ${
-            disabled
-              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-              : "bg-white hover:border-gray-400"
-          }
-          ${error ? "border-red-500" : "border-gray-300"}
-        `}
-      >
-        <span
-          className={`flex-1 truncate ${
-            !selectedOption ? "text-gray-500" : "text-gray-900"
-          }`}
+    <>
+      <div ref={containerRef} className="relative">
+        {/* Select trigger */}
+        <button
+          type="button"
+          name={name}
+          disabled={disabled}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onKeyDown={handleKeyDown}
+          className={`
+            w-full px-3 py-2 text-left border rounded-lg 
+            focus:outline-none focus:ring-1 focus:ring-[#032dff]
+            transition-colors flex items-center justify-between gap-2
+            ${
+              disabled
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                : "bg-white hover:border-gray-400"
+            }
+            ${error ? "border-red-500" : "border-gray-300"}
+          `}
         >
-          {selectedOption?.label || placeholder}
-        </span>
-        <div className="flex items-center gap-1">
-          {selectedOption && !disabled && (
-            <span
-              onClick={handleClear}
-              className="p-1 hover:bg-gray-200 rounded transition cursor-pointer"
-              title="Limpiar selección"
-              role="button"
-              tabIndex={-1}
-            >
-              <IconX size={16} className="text-gray-500" />
-            </span>
-          )}
-          <IconChevronDown
-            size={20}
-            className={`text-gray-500 transition-transform ${
-              isOpen ? "rotate-180" : ""
+          <span
+            className={`flex-1 truncate ${
+              !selectedOption ? "text-gray-500" : "text-gray-900"
             }`}
-          />
-        </div>
-      </button>
+          >
+            {selectedOption?.label || placeholder}
+          </span>
+          <div className="flex items-center gap-1">
+            {selectedOption && !disabled && (
+              <span
+                onClick={handleClear}
+                className="p-1 hover:bg-gray-200 rounded transition cursor-pointer"
+                title="Limpiar selección"
+                role="button"
+                tabIndex={-1}
+              >
+                <IconX size={16} className="text-gray-500" />
+              </span>
+            )}
+            <IconChevronDown
+              size={20}
+              className={`text-gray-500 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+        </button>
+      </div>
 
-      {/* Dropdown */}
+      {/* Dropdown con position fixed */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[min(calc(100vh-200px),400px)]">
+        <div 
+          className="fixed z-[9999] bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[min(calc(100vh-200px),400px)]"
+          style={{
+            top: `${dropdownPosition.top + 4}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`
+          }}
+        >
           {/* Search input */}
           <div className="p-2 border-b border-gray-200 bg-gray-50 shrink-0">
             <div className="relative">
@@ -234,7 +269,7 @@ const SearchableSelect = ({
                             : "hover:bg-gray-100"
                         }
                         ${
-                          option.value === value
+                          String(option.value) === String(value)
                             ? "bg-[#032dff]/5 font-medium"
                             : ""
                         }
@@ -268,8 +303,7 @@ const SearchableSelect = ({
           )}
         </div>
       )}
-    </div>
+    </>
   );
 };
-
 export default SearchableSelect;

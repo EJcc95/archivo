@@ -1,5 +1,4 @@
 import api from '@/api/axios';
-import type { Area } from '@/types/models';
 
 export interface Prestamo {
   id_prestamo: number;

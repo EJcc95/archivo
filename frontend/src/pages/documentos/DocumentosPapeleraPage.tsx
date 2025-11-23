@@ -1,6 +1,7 @@
 /**
  * Documentos Papelera Page
- * Muestra documentos eliminados (soft delete) con opciones de restaurar o eliminar permanentemente
+ * Muestra documentos eliminados (soft delete) con opciones de restaurar
+ * UPDATED: Using DataTable and Badge components
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +13,8 @@ import {
   IconAlertCircle,
   IconSearch,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, DataTable } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { documentoService } from '@/services';
 import { usePermissions } from '@/hooks';
 import { useToast } from '@/components/ui/use-toast';
@@ -109,6 +111,73 @@ const DocumentosPapeleraPage = () => {
     setCurrentPage(1);
   };
 
+  // DataTable columns
+  const columns: Column<any>[] = [
+    {
+      header: 'Documento',
+      id: 'documento',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-gray-900">{row.original.nombre_documento}</div>
+          <div className="text-sm text-gray-500 truncate max-w-md">{row.original.asunto}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Área Origen',
+      accessorKey: 'areaOrigen',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.areaOrigen?.nombre_area || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Tipo',
+      accessorKey: 'TipoDocumento',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.TipoDocumento?.nombre_tipo || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Fecha Eliminación',
+      accessorKey: 'fecha_eliminacion',
+      sortable: true,
+      align: 'center',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.fecha_eliminacion ? new Date(row.original.fecha_eliminacion).toLocaleDateString() : '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      align: 'center',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => handleRestore(row.original.id_documento)}
+            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            title="Restaurar"
+          >
+            <IconRestore size={18} />
+          </button>
+          <button
+            onClick={() => handleHardDelete(row.original.id_documento, row.original.nombre_documento)}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Eliminar permanentemente"
+          >
+            <IconTrash size={18} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   if (!canDelete) {
     return (
       <PageContainer>
@@ -148,98 +217,30 @@ const DocumentosPapeleraPage = () => {
               placeholder="Buscar por nombre o asunto..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent h-[42px]"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
         </div>
 
         {/* Stats */}
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <IconAlertCircle size={20} className="text-red-600" />
-            <p className="text-sm text-red-800">
-              Hay <strong>{deletedDocumentos.length}</strong> documento(s) en la papelera
-            </p>
-          </div>
-        </div>
-
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-          </div>
-        ) : paginatedDocumentos.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {searchTerm ? 'No se encontraron documentos' : 'La papelera está vacía'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Documento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Área Origen
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha Eliminación
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedDocumentos.map((doc: any) => (
-                  <tr key={doc.id_documento} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{doc.nombre_documento}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-md">{doc.asunto}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.areaOrigen?.nombre_area || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {doc.TipoDocumento?.nombre_tipo || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm text-gray-600">
-                        {doc.fecha_eliminacion ? new Date(doc.fecha_eliminacion).toLocaleDateString() : '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleRestore(doc.id_documento)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Restaurar"
-                        >
-                          <IconRestore size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleHardDelete(doc.id_documento, doc.nombre_documento)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Eliminar permanentemente"
-                        >
-                          <IconTrash size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {deletedDocumentos.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <IconAlertCircle size={20} className="text-red-600" />
+              <p className="text-sm text-red-800">
+                Hay <strong>{deletedDocumentos.length}</strong> documento(s) en la papelera
+              </p>
+            </div>
           </div>
         )}
+
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={paginatedDocumentos}
+          isLoading={isLoading}
+          emptyMessage={searchTerm ? 'No se encontraron documentos' : 'La papelera está vacía'}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (

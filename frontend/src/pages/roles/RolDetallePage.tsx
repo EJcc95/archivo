@@ -308,10 +308,7 @@ const RolDetallePage = () => {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Sidebar - Estadísticas */}
-        <div className="space-y-6">
+          {/* Sidebar - Estadísticas */}
           {/* Estadísticas */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -360,8 +357,8 @@ const RolDetallePage = () => {
                 </div>
               </div>
             </div>
-          )}
-        </div>      
+          )}       
+          </div>            
 
       {/* Modal de confirmación para eliminar */}
       <ConfirmModal

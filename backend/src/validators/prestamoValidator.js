@@ -5,9 +5,9 @@ exports.createPrestamoValidator = [
   body('id_archivador')
     .notEmpty().withMessage('El ID del archivador es obligatorio')
     .isInt().withMessage('El ID del archivador debe ser un número entero'),
-  body('id_usuario_solicitante')
-    .notEmpty().withMessage('El ID del usuario solicitante es obligatorio')
-    .isInt().withMessage('El ID del usuario debe ser un número entero'),
+  body('id_area_solicitante')
+    .notEmpty().withMessage('El ID del área solicitante es obligatorio')
+    .isInt().withMessage('El ID del área debe ser un número entero'),
   body('fecha_devolucion_esperada')
     .notEmpty().withMessage('La fecha de devolución esperada es obligatoria')
     .isDate().withMessage('La fecha de devolución debe ser una fecha válida'),
