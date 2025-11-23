@@ -19,6 +19,7 @@ import {
   IconSend,
   IconX,
   IconAlertCircle,
+  IconClipboardText,
 } from '@tabler/icons-react';
 import { usePermissions } from '@/hooks';
 import { useSidebar } from '@/context/SidebarContext';
@@ -40,7 +41,7 @@ interface NavCategory {
 
 const navigation: NavCategory[] = [
   {
-    title: 'General',
+    title: '',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: IconHome },
     ],
@@ -49,7 +50,7 @@ const navigation: NavCategory[] = [
     title: 'Documentos',
     items: [
       { name: 'Documentos', href: '/documentos', icon: IconFileText, permission: 'docs_read' },
-      { name: 'Tipos Documento', href: '/tipos-documento', icon: IconFileText, permission: 'system_admin' },
+      { name: 'Tipos Documento', href: '/tipos-documento', icon: IconClipboardText, permission: 'system_admin' },
       { name: 'Papelera', href: '/documentos/papelera', icon: IconTrash, permission: 'docs_delete' },
       { name: 'Sin Archivador', href: '/documentos/huerfanos', icon: IconAlertCircle, permission: 'docs_edit' },
     ],
@@ -104,7 +105,7 @@ const Sidebar = () => {
     <>
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col',
           (isExpanded || isMobileOpen || isHovered) ? 'w-[260px]' : 'w-[90px]',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0'
@@ -112,10 +113,10 @@ const Sidebar = () => {
         onMouseEnter={() => !isExpanded && setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Logo */}
+        {/* Logo - Fixed height */}
         <div
           className={cn(
-            'flex h-20 items-center px-6 border-b border-gray-200 transition-all duration-300',
+            'flex h-20 items-center px-4 border-b border-gray-200 transition-all duration-300 shrink-0',
             !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start'
           )}
         >
@@ -124,7 +125,7 @@ const Sidebar = () => {
               <img
                 src={logoAEM}
                 alt="AEM Logo"
-                className="h-16 shrink-0 object-contain"
+                className="h-16"
               />
             ) : (
               <img
@@ -136,12 +137,12 @@ const Sidebar = () => {
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 no-scrollbar">
+        {/* Navigation - Scrollable flex-1 */}
+        <nav className="flex-1 overflow-y-auto px-4 py-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
           {navigation.map((category, catIndex) => (
-            <div key={catIndex}>
+            <div key={catIndex} className="mb-4">
               {shouldShowText && (
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="px-4 py-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
                   {category.title}
                 </div>
               )}
@@ -155,10 +156,10 @@ const Sidebar = () => {
                       <Link
                         to={item.href}
                         className={cn(
-                          'group flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 relative overflow-hidden',
+                          'group flex items-center px-3 py-2 text-[13px] font-light rounded-lg transition-all duration-200 relative overflow-hidden',
                           isActive
                             ? 'bg-[#032DFF] text-white shadow-lg shadow-[#032dff]/25'
-                            : 'text-gray-700 hover:bg-linear-to-r hover:from-[#032dff]/10 hover:to-[#032dff]/10 hover:text-[#032dff] hover:shadow-md hover:shadow-[#032dff]/10',
+                            : 'text-[#393d3f] hover:bg-linear-to-r hover:from-[#032dff]/10 hover:to-[#032dff]/10 hover:text-[#032dff]',
                           !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-between'
                         )}
                       >
@@ -177,7 +178,7 @@ const Sidebar = () => {
                             )}
                           />
                           {shouldShowText && (
-                            <span className="whitespace-nowrap group-hover:font-semibold transition-all duration-200">{item.name}</span>
+                            <span className="whitespace-nowrap transition-all duration-200">{item.name}</span>
                           )}
                         </div>
                         {isActive && shouldShowText && (
@@ -189,15 +190,15 @@ const Sidebar = () => {
                 })}
               </ul>
               {catIndex < navigation.length - 1 && (
-                <div className="my-2 border-t border-gray-200"></div>
+                <div className="my-3 border-t border-gray-200"></div>
               )}
             </div>
           ))}
         </nav>
 
-        {/* Feedback Card */}
+        {/* Feedback Card - Fixed at bottom */}
         {shouldShowText && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-linear-to-b from-white to-gray-50">
+          <div className="shrink-0 p-4 border-t border-gray-100 bg-gradient-to-b from-white to-gray-50">
             <div className="bg-white border border-gray-200 rounded-lg p-3.5 shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="flex items-start gap-3 mb-3">
                 <div className="bg-[#032DFF]/10 rounded-lg p-2 shrink-0">
