@@ -1,13 +1,14 @@
 /**
  * Editar Área Page
  * Formulario para editar un área existente
+ * UPDATED: Using FormField and Card components for consistent UI
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconFolders, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
-import { PageContainer, PageHeader } from '@/components/ui';
+import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, CardFooter } from '@/components/ui';
 import { areaService } from '@/services';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -22,6 +23,8 @@ const AreaEditarPage = () => {
     siglas: '',
     estado: true,
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch area
   const { data: area, isLoading } = useQuery({
@@ -52,25 +55,38 @@ const AreaEditarPage = () => {
       });
       navigate('/areas');
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: 'No se pudo actualizar el área',
+        description: error.response?.data?.message || 'No se pudo actualizar el área',
         variant: 'destructive',
       });
     },
   });
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.nombre_area.trim()) {
+      newErrors.nombre_area = 'El nombre del área es requerido';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre_area.trim()) {
+
+    if (!validateForm()) {
       toast({
-        title: 'Error',
-        description: 'El nombre del área es requerido',
+        title: 'Errores de validación',
+        description: 'Por favor corrija los errores antes de continuar',
         variant: 'destructive',
       });
       return;
     }
+
     updateMutation.mutate(formData);
   };
 
@@ -80,13 +96,17 @@ const AreaEditarPage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   if (isLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#032DFF]"></div>
         </div>
       </PageContainer>
     );
@@ -115,76 +135,92 @@ const AreaEditarPage = () => {
       />
 
       <div className="p-6">
-        <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-          {/* Nombre */}
-          <div>
-            <label htmlFor="nombre_area" className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre del Área <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="nombre_area"
-              name="nombre_area"
-              value={formData.nombre_area}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ej: Recursos Humanos"
-            />
-          </div>
+        <div className="max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Información del Área */}
+            <Card>
+              <CardHeader
+                title="Información del Área"
+                subtitle="Datos principales del área"
+              />
+              <CardBody>
+                <div className="space-y-6">
+                  {/* Nombre */}
+                  <FormField
+                    label="Nombre del Área"
+                    required
+                    error={errors.nombre_area}
+                    htmlFor="nombre_area"
+                  >
+                    <input
+                      type="text"
+                      id="nombre_area"
+                      name="nombre_area"
+                      value={formData.nombre_area}
+                      onChange={handleChange}
+                      maxLength={100}
+                      placeholder="Ej: Recursos Humanos"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                    />
+                  </FormField>
 
-          {/* Siglas */}
-          <div>
-            <label htmlFor="siglas" className="block text-sm font-medium text-gray-700 mb-2">
-              Siglas
-            </label>
-            <input
-              type="text"
-              id="siglas"
-              name="siglas"
-              value={formData.siglas}
-              onChange={handleChange}
-              maxLength={50}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ej: RRHH"
-            />
-          </div>
+                  {/* Siglas */}
+                  <FormField
+                    label="Siglas"
+                    htmlFor="siglas"
+                  >
+                    <input
+                      type="text"
+                      id="siglas"
+                      name="siglas"
+                      value={formData.siglas}
+                      onChange={handleChange}
+                      maxLength={50}
+                      placeholder="Ej: RRHH"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                    />
+                  </FormField>
 
-          {/* Estado */}
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="estado"
-              name="estado"
-              checked={formData.estado}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label htmlFor="estado" className="text-sm font-medium text-gray-700">
-              Área activa
-            </label>
-          </div>
+                  {/* Estado */}
+                  <div className="flex items-center gap-3 pt-2">
+                    <input
+                      type="checkbox"
+                      id="estado"
+                      name="estado"
+                      checked={formData.estado}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
+                    />
+                    <label htmlFor="estado" className="text-sm font-medium text-gray-700">
+                      Área activa
+                    </label>
+                  </div>
+                </div>
+              </CardBody>
 
-          {/* Buttons */}
-          <div className="flex items-center gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={updateMutation.isPending}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              <IconDeviceFloppy size={18} />
-              {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/areas')}
-              className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-            >
-              <IconArrowLeft size={18} />
-              Cancelar
-            </button>
-          </div>
-        </form>
+              <CardFooter>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={updateMutation.isPending}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                  >
+                    <IconDeviceFloppy size={18} />
+                    {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/areas')}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                  >
+                    <IconArrowLeft size={18} />
+                    Cancelar
+                  </button>
+                </div>
+              </CardFooter>
+            </Card>
+          </form>
+        </div>
       </div>
     </PageContainer>
   );

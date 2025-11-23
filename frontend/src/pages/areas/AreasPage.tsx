@@ -1,6 +1,7 @@
 /**
  * Áreas Page
  * Lista y gestión de áreas organizacionales
+ * UPDATED: Using DataTable component for consistency with DocumentosPage
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -12,10 +13,9 @@ import {
   IconEdit,
   IconTrash,
   IconSearch,
-  IconCheck,
-  IconX,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, Badge, DataTable } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { areaService } from '@/services';
 import { usePermissions } from '@/hooks';
 import { useToast } from '@/components/ui/use-toast';
@@ -87,6 +87,68 @@ const AreasPage = () => {
     setCurrentPage(1);
   };
 
+  // Badge helper for estado
+  const getEstadoBadge = (estado: boolean) => {
+    if (estado) {
+      return <Badge variant="success">Activo</Badge>;
+    } else {
+      return <Badge variant="info">Inactivo</Badge>;
+    }
+  };
+
+  // DataTable columns
+  const columns: Column<any>[] = [
+    {
+      header: 'Nombre',
+      id: 'nombre',
+      cell: ({ row }) => (
+        <div className="font-medium text-gray-900">{row.original.nombre_area}</div>
+      ),
+      sortable: true,
+    },
+    {
+      header: 'Siglas',
+      accessorKey: 'siglas',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">{row.original.siglas || '-'}</span>
+      ),
+    },
+    {
+      header: 'Estado',
+      accessorKey: 'estado',
+      align: 'center',
+      cell: ({ row }) => getEstadoBadge(row.original.estado),
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      align: 'center',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          {canWrite && (
+            <button
+              onClick={() => navigate(`/areas/${row.original.id_area}/editar`)}
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Editar"
+            >
+              <IconEdit size={18} />
+            </button>
+          )}
+          {canAdmin && (
+            <button
+              onClick={() => handleDelete(row.original.id_area, row.original.nombre_area)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Eliminar"
+            >
+              <IconTrash size={18} />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <PageContainer>
       <PageHeader
@@ -116,89 +178,18 @@ const AreasPage = () => {
               placeholder="Buscar por nombre o siglas..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
         </div>
 
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : paginatedAreas.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {searchTerm ? 'No se encontraron áreas' : 'No hay áreas registradas'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nombre
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Siglas
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedAreas.map((area: Area) => (
-                  <tr key={area.id_area} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{area.nombre_area}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">{area.siglas || '-'}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {area.estado ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <IconCheck size={14} />
-                          Activo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <IconX size={14} />
-                          Inactivo
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {canWrite && (
-                          <button
-                            onClick={() => navigate(`/areas/${area.id_area}/editar`)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Editar"
-                          >
-                            <IconEdit size={18} />
-                          </button>
-                        )}
-                        {canAdmin && (
-                          <button
-                            onClick={() => handleDelete(area.id_area, area.nombre_area)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Eliminar"
-                          >
-                            <IconTrash size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={paginatedAreas}
+          isLoading={isLoading}
+          emptyMessage={searchTerm ? 'No se encontraron áreas' : 'No hay áreas registradas'}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (

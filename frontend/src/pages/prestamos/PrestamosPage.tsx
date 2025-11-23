@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconTransfer, IconPlus, IconEye, IconEdit, IconTrash, IconSearch } from '@tabler/icons-react';
 import { prestamoService, type Prestamo } from '@/services/prestamoService';
-import { PageContainer, PageHeader, Pagination } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, Badge, DataTable } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { useToast } from '@/components/ui/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -75,17 +76,105 @@ const PrestamosPage = () => {
   };
 
   const getStatusBadge = (estado: string) => {
-    const styles = {
-      Activo: 'bg-blue-100 text-blue-800',
-      Devuelto: 'bg-green-100 text-green-800',
-      Vencido: 'bg-red-100 text-red-800'
+    const statusMap: Record<string, { variant: 'success' | 'warning' | 'error' | 'info' | 'primary' }> = {
+      Activo: { variant: 'primary' },
+      Devuelto: { variant: 'success' },
+      Vencido: { variant: 'error' }
     };
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[estado as keyof typeof styles] || 'bg-gray-100 text-gray-800'}`}>
-        {estado}
-      </span>
-    );
+    const status = statusMap[estado] || { variant: 'info' as const };
+    return <Badge variant={status.variant}>{estado}</Badge>;
   };
+
+  // DataTable columns
+  const columns: Column<any>[] = [
+    {
+      header: 'Archivador',
+      id: 'archivador',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-gray-900">{row.original.Archivador?.nombre_archivador || '-'}</div>
+          {row.original.motivo && (
+            <div className="text-sm text-gray-500 truncate max-w-xs">{row.original.motivo}</div>
+          )}
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      header: 'Área Solicitante',
+      accessorKey: 'areaSolicitante',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.areaSolicitante?.nombre_area || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Fecha Préstamo',
+      accessorKey: 'fecha_prestamo',
+      sortable: true,
+      align: 'center',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {new Date(row.original.fecha_prestamo).toLocaleDateString('es-ES')}
+        </span>
+      ),
+    },
+    {
+      header: 'Devolución Esperada',
+      accessorKey: 'fecha_devolucion_esperada',
+      sortable: true,
+      align: 'center',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {new Date(row.original.fecha_devolucion_esperada).toLocaleDateString('es-ES')}
+        </span>
+      ),
+    },
+    {
+      header: 'Estado',
+      accessorKey: 'estado',
+      align: 'center',
+      cell: ({ row }) => getStatusBadge(row.original.estado),
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      align: 'center',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          {canView && (
+            <button
+              onClick={() => navigate(`/prestamos/${row.original.id_prestamo}`)}
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Ver Detalle"
+            >
+              <IconEye size={18} />
+            </button>
+          )}
+          {canEdit && row.original.estado === 'Activo' && (
+            <button
+              onClick={() => navigate(`/prestamos/${row.original.id_prestamo}/editar`)}
+              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              title="Editar"
+            >
+              <IconEdit size={18} />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => handleDelete(row.original.id_prestamo, row.original.Archivador?.nombre_archivador || 'este préstamo')}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Eliminar"
+            >
+              <IconTrash size={18} />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
     <PageContainer>
@@ -115,7 +204,7 @@ const PrestamosPage = () => {
               placeholder="Buscar por archivador, área o motivo..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3f37c9] focus:border-transparent h-[42px]"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
           <select
@@ -124,7 +213,7 @@ const PrestamosPage = () => {
               setFilterEstado(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3f37c9] focus:border-transparent h-[42px]"
+            className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent w-full lg:w-64"
           >
             <option value="">Todos los estados</option>
             <option value="Activo">Activos</option>
@@ -133,91 +222,13 @@ const PrestamosPage = () => {
           </select>
         </div>
 
-        {/* Results count */}
-        <div className="text-sm text-gray-600">
-          Mostrando <strong>{paginatedPrestamos.length}</strong> de <strong>{filteredPrestamos.length}</strong> préstamos
-        </div>
-
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3f37c9]"></div>
-          </div>
-        ) : filteredPrestamos.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {searchTerm ? 'No se encontraron préstamos' : 'No hay préstamos registrados'}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Archivador</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Área Solicitante</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Préstamo</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Devolución Esperada</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {paginatedPrestamos.map((prestamo: Prestamo) => (
-                    <tr key={prestamo.id_prestamo} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{prestamo.Archivador?.nombre_archivador || '-'}</div>
-                        <div className="text-xs text-gray-500">{prestamo.motivo}</div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {prestamo.areaSolicitante?.nombre_area || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {new Date(prestamo.fecha_prestamo).toLocaleDateString('es-ES')}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {new Date(prestamo.fecha_devolucion_esperada).toLocaleDateString('es-ES')}
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(prestamo.estado)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          {canView && (
-                            <button
-                              onClick={() => navigate(`/prestamos/${prestamo.id_prestamo}`)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Ver Detalle"
-                            >
-                              <IconEye size={18} />
-                            </button>
-                          )}
-                          {canEdit && prestamo.estado === 'Activo' && (
-                            <button
-                              onClick={() => navigate(`/prestamos/${prestamo.id_prestamo}/editar`)}
-                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                              title="Editar"
-                            >
-                              <IconEdit size={18} />
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => handleDelete(prestamo.id_prestamo, prestamo.Archivador?.nombre_archivador || 'este préstamo')}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Eliminar"
-                            >
-                              <IconTrash size={18} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={paginatedPrestamos}
+          isLoading={isLoading}
+          emptyMessage={searchTerm || filterEstado ? 'No se encontraron préstamos' : 'No hay préstamos registrados'}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (

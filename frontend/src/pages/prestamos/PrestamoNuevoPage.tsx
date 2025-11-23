@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconDeviceFloppy, IconTransfer } from '@tabler/icons-react';
+import { IconDeviceFloppy, IconTransfer, IconArrowLeft } from '@tabler/icons-react';
 import { prestamoService } from '@/services/prestamoService';
 import { archivadorService } from '@/services/archivadorService';
 import { areaService } from '@/services/areaService';
-import { PageContainer, PageHeader, SearchableSelect } from '@/components/ui';
+import { PageContainer, PageHeader, SearchableSelect, FormField, Card, CardHeader, CardBody, CardFooter } from '@/components/ui';
 import { useToast } from '@/components/ui/use-toast';
 import type { Archivador, Area } from '@/types/models';
 
@@ -28,6 +28,8 @@ const PrestamoNuevoPage = () => {
     motivo: '',
     observaciones: ''
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadOptions();
@@ -56,10 +58,26 @@ const PrestamoNuevoPage = () => {
     e.preventDefault();
     
     // Validate required fields
-    if (!formData.id_archivador || !formData.id_area_solicitante || !formData.fecha_devolucion_esperada || !formData.motivo) {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.id_archivador) {
+      newErrors.id_archivador = 'Debe seleccionar un archivador';
+    }
+    if (!formData.id_area_solicitante) {
+      newErrors.id_area_solicitante = 'Debe seleccionar un área solicitante';
+    }
+    if (!formData.fecha_devolucion_esperada) {
+      newErrors.fecha_devolucion_esperada = 'La fecha de devolución es requerida';
+    }
+    if (!formData.motivo.trim()) {
+      newErrors.motivo = 'El motivo es requerido';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       toast({
-        title: 'Campos requeridos',
-        description: 'Por favor complete los campos obligatorios',
+        title: 'Errores de validación',
+        description: 'Por favor corrija los errores antes de continuar',
         variant: 'destructive',
       });
       return;
@@ -96,15 +114,23 @@ const PrestamoNuevoPage = () => {
         description: 'El préstamo ha sido registrado correctamente',
       });
       navigate('/prestamos');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating loan:', error);
       toast({
         title: 'Error',
-        description: 'Error al registrar el préstamo',
+        description: error.response?.data?.message || 'Error al registrar el préstamo',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChange = (name: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -114,127 +140,130 @@ const PrestamoNuevoPage = () => {
         title="Nuevo Préstamo"
         description="Registrar la salida de un archivador"
         icon={<IconTransfer size={28} className="text-white" strokeWidth={2} />}
-        backButton={{ onClick: () => navigate('/prestamos'), label: 'Volver' }}
+        backButton={{ onClick: () => navigate('/prestamos'), label: 'Volver a préstamos' }}
       />
 
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-900">Información del Préstamo</h3>
-              <p className="text-sm text-gray-600 mt-1">Complete los datos del préstamo del archivador</p>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Archivador */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Archivador <span className="text-red-500">*</span>
-                  </label>
-                  <SearchableSelect
-                    options={archivadores.map((arch) => ({
-                      value: arch.id_archivador,
-                      label: `${arch.nombre_archivador} - ${arch.descripcion || 'Sin descripción'}`,
-                    }))}
-                    value={formData.id_archivador}
-                    onChange={(value) => setFormData({ ...formData, id_archivador: value })}
-                    placeholder="Seleccione un archivador"
-                  />
-                </div>
-
-                {/* Área Solicitante */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Área Solicitante <span className="text-red-500">*</span>
-                  </label>
-                  <SearchableSelect
-                    options={areas.map((area) => ({
-                      value: area.id_area,
-                      label: area.nombre_area,
-                    }))}
-                    value={formData.id_area_solicitante}
-                    onChange={(value) => setFormData({ ...formData, id_area_solicitante: value })}
-                    placeholder="Seleccione el área solicitante"
-                  />
-                </div>
-
-                {/* Fecha Devolución */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha Devolución Esperada <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.fecha_devolucion_esperada}
-                    onChange={(e) => setFormData({ ...formData, fecha_devolucion_esperada: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3f37c9] focus:border-transparent"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Información del Préstamo */}
+            <Card>
+              <CardHeader
+                title="Información del Préstamo"
+                subtitle="Complete los datos del préstamo del archivador"
+              />
+              <CardBody>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Archivador */}
+                  <FormField
+                    label="Archivador"
                     required
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+                    error={errors.id_archivador}
+                  >
+                    <SearchableSelect
+                      options={archivadores.map((arch) => ({
+                        value: arch.id_archivador,
+                        label: `${arch.nombre_archivador} - ${arch.descripcion || 'Sin descripción'}`,
+                      }))}
+                      value={formData.id_archivador}
+                      onChange={(value) => handleChange('id_archivador', value)}
+                      placeholder="Seleccione un archivador"
+                      error={!!errors.id_archivador}
+                    />
+                  </FormField>
 
-                {/* Motivo */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Motivo <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.motivo}
-                    onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3f37c9] focus:border-transparent"
-                    placeholder="Ej: Auditoría externa, revisión legal..."
+                  {/* Área Solicitante */}
+                  <FormField
+                    label="Área Solicitante"
                     required
-                  />
+                    error={errors.id_area_solicitante}
+                  >
+                    <SearchableSelect
+                      options={areas.map((area) => ({
+                        value: area.id_area,
+                        label: area.nombre_area,
+                      }))}
+                      value={formData.id_area_solicitante}
+                      onChange={(value) => handleChange('id_area_solicitante', value)}
+                      placeholder="Seleccione el área solicitante"
+                      error={!!errors.id_area_solicitante}
+                    />
+                  </FormField>
+
+                  {/* Fecha Devolución */}
+                  <FormField
+                    label="Fecha Devolución Esperada"
+                    required
+                    error={errors.fecha_devolucion_esperada}
+                    htmlFor="fecha_devolucion_esperada"
+                  >
+                    <input
+                      type="date"
+                      id="fecha_devolucion_esperada"
+                      value={formData.fecha_devolucion_esperada}
+                      onChange={(e) => handleChange('fecha_devolucion_esperada', e.target.value)}
+                      className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </FormField>
+
+                  {/* Motivo */}
+                  <FormField
+                    label="Motivo"
+                    required
+                    error={errors.motivo}
+                    htmlFor="motivo"
+                  >
+                    <input
+                      type="text"
+                      id="motivo"
+                      value={formData.motivo}
+                      onChange={(e) => handleChange('motivo', e.target.value)}
+                      className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                      placeholder="Ej: Auditoría externa, revisión legal..."
+                    />
+                  </FormField>
                 </div>
 
                 {/* Observaciones */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Observaciones
-                  </label>
+                <FormField
+                  label="Observaciones"
+                  htmlFor="observaciones"
+                  className="mt-6"
+                >
                   <textarea
+                    id="observaciones"
                     value={formData.observaciones}
-                    onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3f37c9] focus:border-transparent resize-none"
-                    rows={4}
+                    onChange={(e) => handleChange('observaciones', e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
+                    rows={3}
                     placeholder="Detalles adicionales del préstamo..."
                   />
-                </div>
-              </div>
+                </FormField>
+              </CardBody>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => navigate('/prestamos')}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-[#3f37c9] rounded-lg hover:bg-[#3730a3] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Registrando...
-                    </>
-                  ) : (
-                    <>
-                      <IconDeviceFloppy size={20} />
-                      Registrar Préstamo
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+              <CardFooter>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                  >
+                    <IconDeviceFloppy size={18} />
+                    {loading ? 'Registrando...' : 'Registrar Préstamo'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/prestamos')}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                  >
+                    <IconArrowLeft size={18} />
+                    Cancelar
+                  </button>
+                </div>
+              </CardFooter>
+            </Card>
+          </form>
         </div>
       </div>
     </PageContainer>

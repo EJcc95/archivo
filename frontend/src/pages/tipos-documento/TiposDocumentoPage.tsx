@@ -12,7 +12,7 @@ import {
   PageContainer, 
   PageHeader, 
   DataTable,
-  ConfirmDialog 
+  ConfirmModal 
 } from '@/components/ui';
 import { tipoDocumentoService } from '@/services';
 import { useAuth } from '@/auth';
@@ -129,7 +129,7 @@ const TiposDocumentoPage = () => {
         />
       </div>
 
-      <ConfirmDialog
+      <ConfirmModal
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}

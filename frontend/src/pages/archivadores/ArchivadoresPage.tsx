@@ -1,6 +1,7 @@
 /**
  * Archivadores Page
  * Lista y gestión de archivadores
+ * UPDATED: Using DataTable component and Badge for consistent UI
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +18,8 @@ import {
   IconLock,
   IconRestore,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, Badge, DataTable } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { archivadorService, areaService } from '@/services';
 import { usePermissions } from '@/hooks';
 import { useToast } from '@/components/ui/use-toast';
@@ -129,28 +131,118 @@ const ArchivadoresPage = () => {
   const getEstadoIcon = (estado: Archivador['estado']) => {
     switch (estado) {
       case 'Abierto':
-        return <IconFolderOpen size={16} className="text-green-600" />;
+        return <IconFolderOpen size={14} className="text-green-600" />;
       case 'Cerrado':
-        return <IconFolderFilled size={16} className="text-gray-600" />;
+        return <IconFolderFilled size={14} className="text-gray-600" />;
       case 'En Custodia':
-        return <IconLock size={16} className="text-blue-600" />;
+        return <IconLock size={14} className="text-blue-600" />;
       default:
         return null;
     }
   };
 
-  const getEstadoClass = (estado: Archivador['estado']) => {
+  const getEstadoBadge = (estado: Archivador['estado']) => {
     switch (estado) {
       case 'Abierto':
-        return 'bg-green-100 text-green-800';
+        return <Badge variant="success" icon={getEstadoIcon(estado)}>{estado}</Badge>;
       case 'Cerrado':
-        return 'bg-gray-100 text-gray-800';
+        return <Badge variant="info" icon={getEstadoIcon(estado)}>{estado}</Badge>;
       case 'En Custodia':
-        return 'bg-blue-100 text-blue-800';
+        return <Badge variant="primary" icon={getEstadoIcon(estado)}>{estado}</Badge>;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Badge variant="neutral">{estado}</Badge>;
     }
   };
+
+  // DataTable columns
+  const columns: Column<any>[] = [
+    {
+      header: 'Nombre',
+      id: 'nombre',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-gray-900">{row.original.nombre_archivador}</div>
+          {row.original.descripcion && (
+            <div className="text-sm text-gray-500 truncate max-w-md">{row.original.descripcion}</div>
+          )}
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      header: 'Área',
+      accessorKey: 'areaPropietaria',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.areaPropietaria?.nombre_area || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Ubicación',
+      accessorKey: 'ubicacion_fisica',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">{row.original.ubicacion_fisica || '-'}</span>
+      ),
+    },
+    {
+      header: 'Folios',
+      accessorKey: 'total_folios',
+      align: 'center',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-gray-900">{row.original.total_folios}</span>
+      ),
+    },
+    {
+      header: 'Estado',
+      accessorKey: 'estado',
+      align: 'center',
+      cell: ({ row }) => getEstadoBadge(row.original.estado),
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      align: 'center',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          {!row.original.eliminado ? (
+            <>
+              {canWrite && (
+                <button
+                  onClick={() => navigate(`/archivadores/${row.original.id_archivador}/editar`)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Editar"
+                >
+                  <IconEdit size={18} />
+                </button>
+              )}
+              {canAdmin && (
+                <button
+                  onClick={() => handleDelete(row.original.id_archivador, row.original.nombre_archivador)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Eliminar"
+                >
+                  <IconTrash size={18} />
+                </button>
+              )}
+            </>
+          ) : (
+            canAdmin && (
+              <button
+                onClick={() => handleRestore(row.original.id_archivador)}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                title="Restaurar"
+              >
+                <IconRestore size={18} />
+              </button>
+            )
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
     <PageContainer>
@@ -170,7 +262,7 @@ const ArchivadoresPage = () => {
 
       <div className="p-6 space-y-6">
         {/* Search Bar & Filters */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
           <div className="relative flex-1 max-w-md">
             <IconSearch
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -181,125 +273,31 @@ const ArchivadoresPage = () => {
               placeholder="Buscar archivador..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
           
           {canAdmin && (
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-gray-700 whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={showDeleted}
                 onChange={(e) => handleShowDeletedChange(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
               />
               Mostrar eliminados
             </label>
           )}
         </div>
 
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : paginatedArchivadores.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            {searchTerm ? 'No se encontraron archivadores' : 'No hay archivadores registrados'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nombre
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Área
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ubicación
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Folios
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedArchivadores.map((archivador: Archivador) => (
-                  <tr key={archivador.id_archivador} className={`hover:bg-gray-50 ${archivador.eliminado ? 'opacity-50' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{archivador.nombre_archivador}</div>
-                      {archivador.descripcion && (
-                        <div className="text-sm text-gray-500">{archivador.descripcion}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {archivador.areaPropietaria?.nombre_area || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">{archivador.ubicacion_fisica || '-'}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm font-medium text-gray-900">{archivador.total_folios}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoClass(archivador.estado)}`}>
-                        {getEstadoIcon(archivador.estado)}
-                        {archivador.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {!archivador.eliminado ? (
-                          <>
-                            {canWrite && (
-                              <button
-                                onClick={() => navigate(`/archivadores/${archivador.id_archivador}/editar`)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Editar"
-                              >
-                                <IconEdit size={18} />
-                              </button>
-                            )}
-                            {canAdmin && (
-                              <button
-                                onClick={() => handleDelete(archivador.id_archivador, archivador.nombre_archivador)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Eliminar"
-                              >
-                                <IconTrash size={18} />
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          canAdmin && (
-                            <button
-                              onClick={() => handleRestore(archivador.id_archivador)}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Restaurar"
-                            >
-                              <IconRestore size={18} />
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={paginatedArchivadores}
+          isLoading={isLoading}
+          emptyMessage={searchTerm ? 'No se encontraron archivadores' : 'No hay archivadores registrados'}
+          rowClassName={(row) => row.eliminado ? 'opacity-50' : ''}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (
