@@ -1,10 +1,10 @@
 /**
  * Enhanced DataTable Component
- * Improved table component with sorting, loading states, and actions
+ * Improved table component with sorting, pagination, striped rows, loading states, and actions
  */
 
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IconChevronUp, IconChevronDown, IconSelector } from '@tabler/icons-react';
 import { cn } from '@/utils';
 
@@ -25,6 +25,8 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   rowClassName?: (row: T, index: number) => string;
   onRowClick?: (row: T, index: number) => void;
+  striped?: boolean;
+  pageSize?: number;
 }
 
 export default function DataTable<T>({
@@ -34,11 +36,19 @@ export default function DataTable<T>({
   emptyMessage = 'No hay registros para mostrar',
   rowClassName,
   onRowClick,
+  striped = true,
+  pageSize = 10,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T | null;
     direction: 'asc' | 'desc' | null;
   }>({ key: null, direction: null });
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to first page when data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
 
   // Sorting function
   const handleSort = (column: Column<T>) => {
@@ -74,6 +84,12 @@ export default function DataTable<T>({
     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(sortedData.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedData = sortedData.slice(startIndex, endIndex);
 
   // Loading state
   if (isLoading) {
@@ -159,15 +175,16 @@ export default function DataTable<T>({
 
           {/* Body */}
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedData.map((row, rowIndex) => (
+            {paginatedData.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 className={cn(
                   'transition-colors',
                   onRowClick && 'cursor-pointer hover:bg-gray-50',
-                  rowClassName?.(row, rowIndex)
+                  striped && rowIndex % 2 === 1 && 'bg-gray-50',
+                  rowClassName?.(row, startIndex + rowIndex)
                 )}
-                onClick={() => onRowClick?.(row, rowIndex)}
+                onClick={() => onRowClick?.(row, startIndex + rowIndex)}
               >
                 {columns.map((col, colIndex) => (
                   <td
@@ -178,7 +195,7 @@ export default function DataTable<T>({
                     )}
                   >
                     {col.cell
-                      ? col.cell({ row: { original: row }, index: rowIndex })
+                      ? col.cell({ row: { original: row }, index: startIndex + rowIndex })
                       : col.accessorKey
                       ? String(row[col.accessorKey] ?? '-')
                       : null}
@@ -189,6 +206,97 @@ export default function DataTable<T>({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Siguiente
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
+                  <span className="font-medium">{Math.min(endIndex, sortedData.length)}</span> de{' '}
+                  <span className="font-medium">{sortedData.length}</span> registros
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Anterior</span>
+                    <IconChevronDown size={16} className="rotate-90" />
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                    // Show first, last, current, and pages around current
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={cn(
+                            'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                            page === currentPage
+                              ? 'z-10 bg-[#032DFF] border-[#032DFF] text-white'
+                              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                          )}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (
+                      (page === currentPage - 2 && page > 1) ||
+                      (page === currentPage + 2 && page < totalPages)
+                    ) {
+                      return (
+                        <span
+                          key={page}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Siguiente</span>
+                    <IconChevronDown size={16} className="-rotate-90" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

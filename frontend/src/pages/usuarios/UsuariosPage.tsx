@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconUsers, IconPlus, IconEdit, IconTrash, IconSearch, IconKey } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, SearchableSelect, Badge, DataTable } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, SearchableSelect, Badge, DataTable, ConfirmModal } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { userService } from '@/services';
 import { useAuth } from '@/auth';
@@ -23,6 +23,10 @@ const UsuariosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<string | number>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+  const [deleteUserName, setDeleteUserName] = useState('');
+  const [resetPwdUserId, setResetPwdUserId] = useState<number | null>(null);
+  const [resetPwdUserName, setResetPwdUserName] = useState('');
   const itemsPerPage = 25;
 
   const isAdmin = currentUser?.rol === 'Administrador';
@@ -52,6 +56,8 @@ const UsuariosPage = () => {
         title: 'Usuario eliminado',
         description: 'El usuario ha sido eliminado correctamente',
       });
+      setDeleteUserId(null);
+      setDeleteUserName('');
     },
     onError: () => {
       toast({
@@ -59,6 +65,8 @@ const UsuariosPage = () => {
         description: 'No se pudo eliminar el usuario',
         variant: 'destructive',
       });
+      setDeleteUserId(null);
+      setDeleteUserName('');
     },
   });
 
@@ -69,6 +77,8 @@ const UsuariosPage = () => {
         title: 'Contraseña restablecida',
         description: 'Se ha enviado un correo electrónico al usuario con la nueva contraseña',
       });
+      setResetPwdUserId(null);
+      setResetPwdUserName('');
     },
     onError: (error: any) => {
       toast({
@@ -76,18 +86,30 @@ const UsuariosPage = () => {
         description: error.response?.data?.message || 'No se pudo restablecer la contraseña',
         variant: 'destructive',
       });
+      setResetPwdUserId(null);
+      setResetPwdUserName('');
     },
   });
 
   const handleDelete = (id: number, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar al usuario "${nombre}"?`)) {
-      deleteMutation.mutate(id);
+    setDeleteUserId(id);
+    setDeleteUserName(nombre);
+  };
+
+  const confirmDelete = () => {
+    if (deleteUserId) {
+      deleteMutation.mutate(deleteUserId);
     }
   };
 
   const handleResetPassword = (id: number, nombreUsuario: string) => {
-    if (window.confirm(`¿Estás seguro de restablecer la contraseña de "${nombreUsuario}"? Se enviará una nueva contraseña por email.`)) {
-      resetPasswordMutation.mutate(id);
+    setResetPwdUserId(id);
+    setResetPwdUserName(nombreUsuario);
+  };
+
+  const confirmResetPassword = () => {
+    if (resetPwdUserId) {
+      resetPasswordMutation.mutate(resetPwdUserId);
     }
   };
 
@@ -279,6 +301,38 @@ const UsuariosPage = () => {
           />
         )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={!!deleteUserId}
+        onClose={() => {
+          setDeleteUserId(null);
+          setDeleteUserName('');
+        }}
+        onConfirm={confirmDelete}
+        title="Eliminar Usuario"
+        message={`¿Estás seguro de eliminar al usuario "${deleteUserName}"?`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+        isLoading={deleteMutation.isPending}
+      />
+
+      {/* Confirm Reset Password Modal */}
+      <ConfirmModal
+        isOpen={!!resetPwdUserId}
+        onClose={() => {
+          setResetPwdUserId(null);
+          setResetPwdUserName('');
+        }}
+        onConfirm={confirmResetPassword}
+        title="Restablecer Contraseña"
+        message={`¿Estás seguro de restablecer la contraseña de "${resetPwdUserName}"? Se enviará una nueva contraseña por email.`}
+        confirmText="Restablecer Contraseña"
+        cancelText="Cancelar"
+        confirmVariant="primary"
+        isLoading={resetPasswordMutation.isPending}
+      />
     </PageContainer>
   );
 };

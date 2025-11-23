@@ -13,7 +13,7 @@ import {
   IconAlertCircle,
   IconSearch,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, DataTable } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, DataTable, ConfirmModal } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { documentoService } from '@/services';
 import { usePermissions } from '@/hooks';
@@ -28,6 +28,9 @@ const DocumentosPapeleraPage = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [restoreDocId, setRestoreDocId] = useState<number | null>(null);
+  const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
+  const [deleteDocName, setDeleteDocName] = useState('');
   const itemsPerPage = 25;
   
   const canDelete = hasPermission('docs_delete');
@@ -49,6 +52,7 @@ const DocumentosPapeleraPage = () => {
         title: 'Documento restaurado',
         description: 'El documento ha sido restaurado correctamente',
       });
+      setRestoreDocId(null);
     },
     onError: () => {
       toast({
@@ -56,6 +60,7 @@ const DocumentosPapeleraPage = () => {
         description: 'No se pudo restaurar el documento',
         variant: 'destructive',
       });
+      setRestoreDocId(null);
     },
   });
 
@@ -68,6 +73,8 @@ const DocumentosPapeleraPage = () => {
         title: 'Documento eliminado',
         description: 'El documento ha sido eliminado permanentemente',
       });
+      setDeleteDocId(null);
+      setDeleteDocName('');
     },
     onError: () => {
       toast({
@@ -75,18 +82,29 @@ const DocumentosPapeleraPage = () => {
         description: 'No se pudo eliminar el documento permanentemente',
         variant: 'destructive',
       });
+      setDeleteDocId(null);
+      setDeleteDocName('');
     },
   });
 
-  const handleRestore = async (id: number) => {
-    if (window.confirm('¿Estás seguro de restaurar este documento?')) {
-      restoreMutation.mutate(id);
+  const handleRestore = (id: number) => {
+    setRestoreDocId(id);
+  };
+
+  const confirmRestore = () => {
+    if (restoreDocId) {
+      restoreMutation.mutate(restoreDocId);
     }
   };
 
-  const handleHardDelete = async (id: number, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar PERMANENTEMENTE "${nombre}"? Esta acción no se puede deshacer.`)) {
-      hardDeleteMutation.mutate(id);
+  const handleHardDelete = (id: number, nombre: string) => {
+    setDeleteDocId(id);
+    setDeleteDocName(nombre);
+  };
+
+  const confirmHardDelete = () => {
+    if (deleteDocId) {
+      hardDeleteMutation.mutate(deleteDocId);
     }
   };
 
@@ -253,6 +271,35 @@ const DocumentosPapeleraPage = () => {
           />
         )}
       </div>
+
+      {/* Confirm Restore Modal */}
+      <ConfirmModal
+        isOpen={!!restoreDocId}
+        onClose={() => setRestoreDocId(null)}
+        onConfirm={confirmRestore}
+        title="Restaurar Documento"
+        message="¿Estás seguro de restaurar este documento?"
+        confirmText="Restaurar"
+        cancelText="Cancelar"
+        confirmVariant="primary"
+        isLoading={restoreMutation.isPending}
+      />
+
+      {/* Confirm Hard Delete Modal */}
+      <ConfirmModal
+        isOpen={!!deleteDocId}
+        onClose={() => {
+          setDeleteDocId(null);
+          setDeleteDocName('');
+        }}
+        onConfirm={confirmHardDelete}
+        title="Eliminar Permanentemente"
+        message={`¿Estás seguro de eliminar PERMANENTEMENTE "${deleteDocName}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar Permanentemente"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+        isLoading={hardDeleteMutation.isPending}
+      />
     </PageContainer>
   );
 };

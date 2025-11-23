@@ -1,7 +1,7 @@
 /**
  * Archivadores Page
  * Lista y gestión de archivadores
- * UPDATED: Using DataTable component and Badge for consistent UI
+ * UPDATED: Using DataTable component, Badge, SearchableSelect and improved filters
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +17,21 @@ import {
   IconFolderFilled,
   IconLock,
   IconRestore,
+  IconX,
+  IconFilter,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, Badge, DataTable } from '@/components/ui';
+import { 
+  PageContainer, 
+  PageHeader, 
+  Badge, 
+  DataTable, 
+  Input, 
+  SearchableSelect, 
+  Card, 
+  CardBody,
+  Button,
+  ConfirmModal
+} from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { archivadorService, areaService } from '@/services';
 import { usePermissions } from '@/hooks';
@@ -33,8 +46,10 @@ const ArchivadoresPage = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
+  const [filterArea, setFilterArea] = useState('');
+  const [filterEstado, setFilterEstado] = useState('');
+  const [deleteArchId, setDeleteArchId] = useState<number | null>(null);
+  const [deleteArchName, setDeleteArchName] = useState('');
   
   const canWrite = hasPermission('arch_write');
   const canAdmin = hasPermission('arch_admin');
@@ -64,6 +79,8 @@ const ArchivadoresPage = () => {
         title: 'Archivador eliminado',
         description: 'El archivador ha sido eliminado correctamente',
       });
+      setDeleteArchId(null);
+      setDeleteArchName('');
     },
     onError: () => {
       toast({
@@ -71,6 +88,8 @@ const ArchivadoresPage = () => {
         description: 'No se pudo eliminar el archivador',
         variant: 'destructive',
       });
+      setDeleteArchId(null);
+      setDeleteArchName('');
     },
   });
 
@@ -93,9 +112,14 @@ const ArchivadoresPage = () => {
     },
   });
 
-  const handleDelete = async (id: number, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar el archivador "${nombre}"?`)) {
-      deleteMutation.mutate(id);
+  const handleDelete = (id: number, nombre: string) => {
+    setDeleteArchId(id);
+    setDeleteArchName(nombre);
+  };
+
+  const confirmDelete = () => {
+    if (deleteArchId) {
+      deleteMutation.mutate(deleteArchId);
     }
   };
 
@@ -103,30 +127,37 @@ const ArchivadoresPage = () => {
     restoreMutation.mutate(id);
   };
 
+  // Prepare SearchableSelect options
+  const areaOptions = areas.map((area: any) => ({
+    value: String(area.id_area),
+    label: area.nombre_area,
+  }));
+
+  const estadoOptions = [
+    { value: 'Abierto', label: 'Abierto' },
+    { value: 'Cerrado', label: 'Cerrado' },
+    { value: 'En Custodia', label: 'En Custodia' },
+  ];
+
   // Filter archivadores
   const filteredArchivadores = archivadores.filter((arch: Archivador) => {
-    const matchesSearch = arch.nombre_archivador.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = arch.nombre_archivador.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         arch.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDeleted = showDeleted ? arch.eliminado : !arch.eliminado;
-    return matchesSearch && matchesDeleted;
+    const matchesArea = !filterArea || String(arch.id_area_propietaria) === filterArea;
+    const matchesEstado = !filterEstado || arch.estado === filterEstado;
+    
+    return matchesSearch && matchesDeleted && matchesArea && matchesEstado;
   });
 
-  // Paginate filtered archivadores
-  const totalPages = Math.ceil(filteredArchivadores.length / itemsPerPage);
-  const paginatedArchivadores = filteredArchivadores.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Reset to page 1 when search or filter changes
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterArea('');
+    setFilterEstado('');
+    setShowDeleted(false);
   };
 
-  const handleShowDeletedChange = (checked: boolean) => {
-    setShowDeleted(checked);
-    setCurrentPage(1);
-  };
+  const hasActiveFilters = searchTerm || filterArea || filterEstado || showDeleted;
 
   const getEstadoIcon = (estado: Archivador['estado']) => {
     switch (estado) {
@@ -250,66 +281,126 @@ const ArchivadoresPage = () => {
         title="Archivadores"
         description="Gestión de archivadores físicos"
         icon={<IconArchive size={28} className="text-white" strokeWidth={2} />}
-        actionButtons={canWrite ? [
-          {
-            label: 'Nuevo Archivador',
-            onClick: () => navigate('/archivadores/nuevo'),
-            icon: <IconPlus size={18} />,
-            variant: 'primary',
-          },
-        ] : undefined}
+        actionButton={canWrite ? (
+          <Button 
+            onClick={() => navigate('/archivadores/nuevo')}
+            startIcon={<IconPlus size={20} className="text-[#0A36CC]" />}
+            className="bg-white text-[#0A36CC] hover:bg-gray-50 border border-gray-200"
+          >
+            Nuevo Archivador
+          </Button>
+        ) : undefined}
       />
 
       <div className="p-6 space-y-6">
-        {/* Search Bar & Filters */}
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-          <div className="relative flex-1 max-w-md">
-            <IconSearch
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Buscar archivador..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-            />
-          </div>
-          
-          {canAdmin && (
-            <label className="flex items-center gap-2 text-sm text-gray-700 whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={showDeleted}
-                onChange={(e) => handleShowDeletedChange(e.target.checked)}
-                className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
-              />
-              Mostrar eliminados
-            </label>
-          )}
+        {/* Filters Card */}
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-2 mb-4">
+              <IconFilter size={20} className="text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-900">Filtros</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="relative lg:col-span-2">
+                <IconSearch
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+                <Input
+                  type="text"
+                  placeholder="Buscar archivador..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Area Filter */}
+              <div>
+                <SearchableSelect
+                  options={areaOptions}
+                  value={filterArea}
+                  onChange={(value) => setFilterArea(String(value))}
+                  placeholder="Filtrar por área"
+                  emptyMessage="No se encontraron áreas"
+                />
+              </div>
+
+              {/* Estado Filter */}
+              <div>
+                <SearchableSelect
+                  options={estadoOptions}
+                  value={filterEstado}
+                  onChange={(value) => setFilterEstado(String(value))}
+                  placeholder="Filtrar por estado"
+                  emptyMessage="No hay estados"
+                />
+              </div>
+            </div>
+
+            {/* Show deleted checkbox and clear filters */}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+              {canAdmin && (
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showDeleted}
+                    onChange={(e) => setShowDeleted(e.target.checked)}
+                    className="w-4 h-4 text-[#0A36CC] border-gray-300 rounded focus:ring-[#0A36CC]"
+                  />
+                  Mostrar eliminados
+                </label>
+              )}
+              
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  startIcon={<IconX size={16} />}
+                >
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Stats */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            Mostrando <strong>{filteredArchivadores.length}</strong> archivador{filteredArchivadores.length !== 1 ? 'es' : ''}
+          </p>
         </div>
 
         {/* DataTable */}
         <DataTable
           columns={columns}
-          data={paginatedArchivadores}
+          data={filteredArchivadores}
           isLoading={isLoading}
           emptyMessage={searchTerm ? 'No se encontraron archivadores' : 'No hay archivadores registrados'}
           rowClassName={(row) => row.eliminado ? 'opacity-50' : ''}
+          pageSize={25}
         />
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={filteredArchivadores.length}
-          />
-        )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={!!deleteArchId}
+        onClose={() => {
+          setDeleteArchId(null);
+          setDeleteArchName('');
+        }}
+        onConfirm={confirmDelete}
+        title="Eliminar Archivador"
+        message={`¿Estás seguro de eliminar el archivador "${deleteArchName}"?`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </PageContainer>
   );
 };

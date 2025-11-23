@@ -5,21 +5,34 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { IconHistory, IconSearch, IconFilter,IconAlertCircle } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination } from '@/components/ui';
+import { IconHistory, IconSearch, IconFilter, IconAlertCircle, IconX } from '@tabler/icons-react';
+import { 
+  PageContainer, 
+  PageHeader, 
+  Pagination, 
+  DataTable, 
+  Input, 
+  Card, 
+  CardBody, 
+  Badge, 
+  Button 
+} from '@/components/ui';
 import { auditService } from '@/services';
 import { usePermissions } from '@/hooks';
+import { useAuth } from '@/auth';
 import type { AuditLog } from '@/services/auditService';
+import type { Column } from '@/components/ui/DataTable';
 
 const AuditoriaPage = () => {
   const { hasPermission } = usePermissions();
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const  [fechaInicio, setFechaInicio] = useState('');
+  const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const itemsPerPage = 20;
   
-  const canAccess = hasPermission('system_admin');
+  const canAccess = user?.rol === 'Administrador' || hasPermission('system_admin');
 
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs', currentPage, searchTerm, fechaInicio, fechaFin],
@@ -46,8 +59,88 @@ const AuditoriaPage = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('es-ES');
+    return new Date(dateString).toLocaleString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
+
+  const getActionColor = (action: string): 'success' | 'info' | 'warning' | 'error' => {
+    const actionLower = action.toLowerCase();
+    if (actionLower.includes('crear') || actionLower.includes('insert')) return 'success';
+    if (actionLower.includes('actualizar') || actionLower.includes('update')) return 'info';
+    if (actionLower.includes('eliminar') || actionLower.includes('delete')) return 'error';
+    return 'warning';
+  };
+
+  const columns: Column<AuditLog>[] = [
+    {
+      header: 'Fecha y Hora',
+      accessorKey: 'fecha_hora',
+      sortable: true,
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-900 whitespace-nowrap">
+          {formatDate(row.original.fecha_hora)}
+        </div>
+      )
+    },
+    {
+      header: 'Usuario',
+      accessorKey: 'Usuario',
+      cell: ({ row }) => (
+        <div className="min-w-[150px]">
+          <div className="text-sm font-medium text-gray-900">
+            {row.original.Usuario?.nombre_usuario || 'N/A'}
+          </div>
+          <div className="text-xs text-gray-500">
+            {row.original.Usuario?.nombres} {row.original.Usuario?.apellidos}
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Acción',
+      accessorKey: 'accion',
+      sortable: true,
+      cell: ({ row }) => (
+        <Badge variant={getActionColor(row.original.accion)}>
+          {row.original.accion}
+        </Badge>
+      )
+    },
+    {
+      header: 'Tabla Afectada',
+      accessorKey: 'tabla_afectada',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600 font-mono">
+          {row.original.tabla_afectada || '-'}
+        </span>
+      )
+    },
+    {
+      header: 'Detalles',
+      accessorKey: 'detalles',
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600 max-w-xs truncate" title={row.original.detalles || ''}>
+          {row.original.detalles || '-'}
+        </div>
+      )
+    },
+    {
+      header: 'IP',
+      accessorKey: 'ip_address',
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600 font-mono">
+          {row.original.ip_address || '-'}
+        </span>
+      )
+    }
+  ];
 
   if (!canAccess) {
     return (
@@ -63,6 +156,8 @@ const AuditoriaPage = () => {
     );
   }
 
+  const hasActiveFilters = searchTerm || fechaInicio || fechaFin;
+
   return (
     <PageContainer>
       <PageHeader
@@ -72,60 +167,62 @@ const AuditoriaPage = () => {
       />
 
       <div className="p-6 space-y-6">
-        {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <IconFilter size={20} className="text-gray-600" />
-            <h3 className="text-sm font-medium text-gray-900">Filtros</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <IconSearch
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Buscar por acción o detalles..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+        {/* Filters Card */}
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-2 mb-4">
+              <IconFilter size={20} className="text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-900">Filtros</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <IconSearch
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <Input
+                  type="text"
+                  placeholder="Buscar por acción o detalles..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              <div>
+                <Input
+                  type="date"
+                  value={fechaInicio}
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                  placeholder="Fecha inicio"
+                />
+              </div>
+
+              <div>
+                <Input
+                  type="date"
+                  value={fechaFin}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  placeholder="Fecha fin"
+                />
+              </div>
             </div>
 
-            <div>
-              <input
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Fecha inicio"
-              />
-            </div>
-
-            <div>
-              <input
-                type="date"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Fecha fin"
-              />
-            </div>
-          </div>
-
-          {(searchTerm || fechaInicio || fechaFin) && (
-            <div className="mt-4">
-              <button
-                onClick={handleFilterReset}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Limpiar filtros
-              </button>
-            </div>
-          )}
-        </div>
+            {hasActiveFilters && (
+              <div className="mt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleFilterReset}
+                  startIcon={<IconX size={16} />}
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            )}
+          </CardBody>
+        </Card>
 
         {/* Stats */}
         {data && (
@@ -136,74 +233,13 @@ const AuditoriaPage = () => {
           </div>
         )}
 
-        {/* Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : !data || data.logs.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            No se encontraron registros de auditoría
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha y Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Usuario
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acción
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tabla Afectada
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Detalles
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    IP
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.logs.map((log: AuditLog) => (
-                  <tr key={log.id_auditoria} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(log.fecha_hora)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {log.Usuario?.nombre_usuario || 'N/A'}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {log.Usuario?.nombres} {log.Usuario?.apellidos}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                        {log.accion}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {log.tabla_afectada || '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                      {log.detalles || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {log.ip_address || '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* DataTable */}
+        <DataTable
+          data={data?.logs || []}
+          columns={columns}
+          isLoading={isLoading}
+          emptyMessage="No se encontraron registros de auditoría"
+        />
 
         {/* Pagination */}
         {data && data.totalPages > 1 && (

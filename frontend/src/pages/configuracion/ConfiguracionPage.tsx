@@ -10,11 +10,15 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/hooks/useToast';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/auth';
 
 const ConfiguracionPage = () => {
   const { toast } = useToast();
-  const { hasPermission } = usePermissions();
-  const canManageConfig = hasPermission('admin_config');
+  const { isAdmin } = usePermissions();
+  const { user } = useAuth();
+  
+  // El módulo de configuración requiere rol Administrador
+  const canManageConfig = user?.rol === 'Administrador' || isAdmin;
 
   const [configs, setConfigs] = useState<Config[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +42,10 @@ const ConfiguracionPage = () => {
       setLoading(true);
       const data = await configService.getAll();
       setConfigs(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading configs:', error);
-      toast.error('Error al cargar la configuración');
+      const errorMessage = error.response?.data?.message || 'Error al cargar la configuración';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -75,25 +80,57 @@ const ConfiguracionPage = () => {
     
     try {
       await configService.delete(deleteConfig.key);
-      toast.success('Configuración eliminada');
+      toast.success('Configuración eliminada exitosamente');
       loadConfigs();
       setDeleteConfig(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting config:', error);
-      toast.error('Error al eliminar');
+      const errorMessage = error.response?.data?.message || 'Error al eliminar la configuración';
+      toast.error(errorMessage);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validaciones en el frontend
+    if (!formData.key.trim()) {
+      toast.error('La clave es requerida');
+      return;
+    }
+
+    if (!formData.value.trim()) {
+      toast.error('El valor es requerido');
+      return;
+    }
+
+    // Validar formato de la clave
+    const keyRegex = /^[A-Z0-9_]+$/;
+    if (!keyRegex.test(formData.key)) {
+      toast.error('La clave debe contener solo mayúsculas, números y guiones bajos');
+      return;
+    }
+
     try {
-      await configService.set(formData.key, formData.value, formData.description);
-      toast.success(editingConfig ? 'Configuración actualizada' : 'Configuración creada');
+      if (editingConfig) {
+        // Actualizar configuración existente con PUT
+        await configService.update(formData.key, formData.value, formData.description);
+        toast.success('Configuración actualizada exitosamente');
+      } else {
+        // Crear nueva configuración con POST
+        await configService.set(formData.key, formData.value, formData.description);
+        toast.success('Configuración creada exitosamente');
+      }
       setIsModalOpen(false);
       loadConfigs();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving config:', error);
-      toast.error('Error al guardar');
+      
+      // Mostrar mensaje de error más específico
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.errors?.[0]?.msg ||
+                          'Error al guardar la configuración';
+      toast.error(errorMessage);
     }
   };
 
@@ -162,7 +199,11 @@ const ConfiguracionPage = () => {
         icon={<IconSettings size={28} className="text-white" strokeWidth={2}  />}
         actionButton={
           canManageConfig ? (
-            <Button onClick={handleAddNew} startIcon={<IconPlus size={28} className="text-white" strokeWidth={2}/>}>
+            <Button 
+              onClick={handleAddNew} 
+              startIcon={<IconPlus size={20} className="text-[#0A36CC]" />}
+              className="bg-white text-[#0A36CC] hover:bg-gray-50 border border-gray-200"
+            >
               Nueva Variable
             </Button>
           ) : undefined
@@ -201,12 +242,22 @@ const ConfiguracionPage = () => {
                   <Input
                     type="text"
                     value={formData.key}
-                    onChange={(e) => setFormData({ ...formData, key: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase() })}
                     disabled={!!editingConfig}
                     placeholder="EJEMPLO_CLAVE"
+                    pattern="[A-Z0-9_]+"
+                    title="Solo mayúsculas, números y guiones bajos"
                     required
                   />
-                  {editingConfig && <p className="text-xs text-gray-500 mt-1">La clave no se puede modificar una vez creada.</p>}
+                  {editingConfig ? (
+                    <p className="text-xs text-gray-500 mt-1">
+                      La clave no se puede modificar una vez creada.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Solo mayúsculas, números y guiones bajos (A-Z, 0-9, _)
+                    </p>
+                  )}
                 </div>
 
                 <div>

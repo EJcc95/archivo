@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconFileText, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
-import { PageContainer, PageHeader } from '@/components/ui';
+import { PageContainer, PageHeader, Button, Input, Card, CardBody } from '@/components/ui';
 import { tipoDocumentoService } from '@/services';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -36,7 +36,14 @@ const TipoDocumentoNuevoPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre_tipo.trim()) return;
+    if (!formData.nombre_tipo.trim()) {
+      toast({
+        title: 'Error de validación',
+        description: 'El nombre del tipo es requerido',
+        variant: 'destructive',
+      });
+      return;
+    }
     createMutation.mutate(formData);
   };
 
@@ -61,43 +68,49 @@ const TipoDocumentoNuevoPage = () => {
       />
 
       <div className="p-6">
-        <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-          <div>
-            <label htmlFor="nombre_tipo" className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre del Tipo <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="nombre_tipo"
-              name="nombre_tipo"
-              value={formData.nombre_tipo}
-              onChange={handleChange}
-              required
-              maxLength={100}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ej: Resolución, Memorando, Informe"
-            />
-          </div>
+        <Card className="max-w-2xl">
+          <CardBody>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="nombre_tipo" className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre del Tipo <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  id="nombre_tipo"
+                  name="nombre_tipo"
+                  value={formData.nombre_tipo}
+                  onChange={handleChange}
+                  required
+                  maxLength={100}
+                  placeholder="Ej: Resolución, Memorando, Informe"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Ingrese un nombre descriptivo para el tipo de documento
+                </p>
+              </div>
 
-          <div className="flex items-center gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={createMutation.isPending}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              <IconDeviceFloppy size={18} />
-              {createMutation.isPending ? 'Guardando...' : 'Guardar'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/tipos-documento')}
-              className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-            >
-              <IconArrowLeft size={18} />
-              Cancelar
-            </button>
-          </div>
-        </form>
+              <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  isLoading={createMutation.isPending}
+                  startIcon={<IconDeviceFloppy size={18} />}
+                >
+                  {createMutation.isPending ? 'Guardando...' : 'Guardar'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/tipos-documento')}
+                  startIcon={<IconArrowLeft size={18} />}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
       </div>
     </PageContainer>
   );

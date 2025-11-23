@@ -1,7 +1,7 @@
 /**
  * Documentos Page
  * Lista y gestión de documentos con upload de archivos
- * UPDATED: Using new Badge component and improved DataTable
+ * UPDATED: Using new Badge component, improved DataTable and ConfirmModal
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,7 @@ import {
   IconEye,
   IconRestore,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, SearchableSelect, Badge, DataTable } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, SearchableSelect, Badge, DataTable, ConfirmModal } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { documentoService, areaService } from '@/services';
 import { usePermissions } from '@/hooks';
@@ -34,6 +34,8 @@ const DocumentosPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterArea, setFilterArea] = useState<string | number>('');
   const [filterEstado, setFilterEstado] = useState<string | number>('');
+  const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
+  const [deleteDocName, setDeleteDocName] = useState('');
   const itemsPerPage = 25;
   
   const canWrite = hasPermission('docs_create');
@@ -81,6 +83,8 @@ const DocumentosPage = () => {
         title: 'Documento eliminado',
         description: 'El documento ha sido movido a la papelera',
       });
+      setDeleteDocId(null);
+      setDeleteDocName('');
     },
     onError: () => {
       toast({
@@ -88,6 +92,8 @@ const DocumentosPage = () => {
         description: 'No se pudo eliminar el documento',
         variant: 'destructive',
       });
+      setDeleteDocId(null);
+      setDeleteDocName('');
     },
   });
 
@@ -110,9 +116,14 @@ const DocumentosPage = () => {
     },
   });
 
-  const handleDelete = async (id: number, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de enviar a papelera "${nombre}"?`)) {
-      deleteMutation.mutate(id);
+  const handleDelete = (id: number, nombre: string) => {
+    setDeleteDocId(id);
+    setDeleteDocName(nombre);
+  };
+
+  const confirmDelete = () => {
+    if (deleteDocId) {
+      deleteMutation.mutate(deleteDocId);
     }
   };
 
@@ -325,7 +336,7 @@ const DocumentosPage = () => {
             />
           </div>
 
-          <div className="w-full lg:w-48">
+          <div className="w-full lg:w-56">
             <SearchableSelect
               options={estadoOptions}
               value={filterEstado}
@@ -367,6 +378,22 @@ const DocumentosPage = () => {
           />
         )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={!!deleteDocId}
+        onClose={() => {
+          setDeleteDocId(null);
+          setDeleteDocName('');
+        }}
+        onConfirm={confirmDelete}
+        title="Enviar a Papelera"
+        message={`¿Estás seguro de enviar a papelera "${deleteDocName}"?`}
+        confirmText="Enviar a Papelera"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </PageContainer>
   );
 };

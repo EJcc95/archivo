@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconTransfer, IconPlus, IconEye, IconEdit, IconTrash, IconSearch } from '@tabler/icons-react';
 import { prestamoService, type Prestamo } from '@/services/prestamoService';
-import { PageContainer, PageHeader, Pagination, Badge, DataTable } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, Badge, DataTable, ConfirmModal } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { useToast } from '@/components/ui/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -23,6 +23,8 @@ const PrestamosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deletePrestamoId, setDeletePrestamoId] = useState<number | null>(null);
+  const [deletePrestamoName, setDeletePrestamoName] = useState('');
   const itemsPerPage = 10;
 
   // Fetch prestamos
@@ -40,6 +42,8 @@ const PrestamosPage = () => {
         title: 'Préstamo eliminado',
         description: 'El préstamo ha sido eliminado correctamente',
       });
+      setDeletePrestamoId(null);
+      setDeletePrestamoName('');
     },
     onError: () => {
       toast({
@@ -47,12 +51,19 @@ const PrestamosPage = () => {
         description: 'No se pudo eliminar el préstamo',
         variant: 'destructive',
       });
+      setDeletePrestamoId(null);
+      setDeletePrestamoName('');
     },
   });
 
-  const handleDelete = async (id: number, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar el préstamo de "${nombre}"? Esta acción no se puede deshacer.`)) {
-      deleteMutation.mutate(id);
+  const handleDelete = (id: number, nombre: string) => {
+    setDeletePrestamoId(id);
+    setDeletePrestamoName(nombre);
+  };
+
+  const confirmDelete = () => {
+    if (deletePrestamoId) {
+      deleteMutation.mutate(deletePrestamoId);
     }
   };
 
@@ -241,6 +252,22 @@ const PrestamosPage = () => {
           />
         )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={!!deletePrestamoId}
+        onClose={() => {
+          setDeletePrestamoId(null);
+          setDeletePrestamoName('');
+        }}
+        onConfirm={confirmDelete}
+        title="Eliminar Préstamo"
+        message={`¿Estás seguro de eliminar el préstamo de "${deletePrestamoName}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </PageContainer>
   );
 };

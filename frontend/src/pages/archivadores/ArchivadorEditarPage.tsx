@@ -18,13 +18,20 @@ const ArchivadorEditarPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    nombre_archivador: string;
+    descripcion: string;
+    id_area_propietaria: number;
+    id_tipo_documento_contenido: number;
+    ubicacion_fisica: string;
+    estado: 'Abierto' | 'Cerrado' | 'En Custodia';
+  }>({
     nombre_archivador: '',
     descripcion: '',
     id_area_propietaria: 0,
     id_tipo_documento_contenido: 1,
     ubicacion_fisica: '',
-    estado: 'Abierto' as const,
+    estado: 'Abierto',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -264,18 +271,17 @@ const ArchivadorEditarPage = () => {
                   </FormField>
 
                   {/* Estado */}
-                  <FormField label="Estado" htmlFor="estado">
-                    <select
-                      id="estado"
-                      name="estado"
+                  <FormField label="Estado">
+                    <SearchableSelect
+                      options={[
+                        { value: 'Abierto', label: 'Abierto' },
+                        { value: 'Cerrado', label: 'Cerrado' },
+                        { value: 'En Custodia', label: 'En Custodia' },
+                      ]}
                       value={formData.estado}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    >
-                      <option value="Abierto">Abierto</option>
-                      <option value="Cerrado">Cerrado</option>
-                      <option value="En Custodia">En Custodia</option>
-                    </select>
+                      onChange={(value) => setFormData((prev) => ({ ...prev, estado: String(value) as 'Abierto' | 'Cerrado' | 'En Custodia' }))}
+                      placeholder="Seleccione estado"
+                    />
                   </FormField>
                 </div>
 

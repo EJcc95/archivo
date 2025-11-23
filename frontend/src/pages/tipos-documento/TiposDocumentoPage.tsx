@@ -12,11 +12,19 @@ import {
   PageContainer, 
   PageHeader, 
   DataTable,
-  ConfirmModal 
+  ConfirmModal,
+  Button,
+  Input
 } from '@/components/ui';
 import { tipoDocumentoService } from '@/services';
 import { useAuth } from '@/auth';
 import { useToast } from '@/components/ui/use-toast';
+import type { Column } from '@/components/ui/DataTable';
+
+interface TipoDocumento {
+  id_tipo_documento: number;
+  nombre_tipo: string;
+}
 
 const TiposDocumentoPage = () => {
   const navigate = useNavigate();
@@ -26,7 +34,7 @@ const TiposDocumentoPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const isAdmin = user?.rol === 'ADMINISTRADOR';
+  const isAdmin = user?.rol === 'Administrador' || user?.rol === 'Administrador';
 
   const { data: tipos = [], isLoading } = useQuery({
     queryKey: ['tiposDocumento'],
@@ -59,37 +67,44 @@ const TiposDocumentoPage = () => {
       )
     : [];
 
-  const columns = [
+  const columns: Column<TipoDocumento>[] = [
     {
-      header: 'Nombre',
+      header: 'Nombre del Tipo',
       accessorKey: 'nombre_tipo',
+      sortable: true,
+      cell: ({ row }) => (
+        <span className="font-medium text-gray-900">{row.original.nombre_tipo}</span>
+      )
     },
-    {
+    ...(isAdmin ? [{
       header: 'Acciones',
       id: 'actions',
-      cell: (info: any) => (
-        <div className="flex gap-2">
-          {isAdmin && (
-            <>
-              <button
-                onClick={() => navigate(`/tipos-documento/${info.row.original.id_tipo_documento}/editar`)}
-                className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                title="Editar"
-              >
-                <IconPencil size={18} />
-              </button>
-              <button
-                onClick={() => setDeleteId(info.row.original.id_tipo_documento)}
-                className="p-1 text-red-600 hover:bg-red-50 rounded"
-                title="Eliminar"
-              >
-                <IconTrash size={18} />
-              </button>
-            </>
-          )}
+      align: 'right' as const,
+      cell: ({ row }: { row: { original: TipoDocumento } }) => (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/tipos-documento/${row.original.id_tipo_documento}/editar`);
+            }}
+            className="text-blue-600 hover:text-blue-800 p-1 rounded-md hover:bg-blue-50 transition-colors"
+            title="Editar"
+          >
+            <IconPencil size={18} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteId(row.original.id_tipo_documento);
+            }}
+            className="text-red-600 hover:text-red-800 p-1 rounded-md hover:bg-red-50 transition-colors"
+            title="Eliminar"
+          >
+            <IconTrash size={18} />
+          </button>
         </div>
       ),
-    },
+    }] : [])
   ];
 
   return (
@@ -98,12 +113,16 @@ const TiposDocumentoPage = () => {
         title="Tipos de Documento"
         description="Gestión de tipos de documentos del sistema"
         icon={<IconFileText size={28} className="text-white" strokeWidth={2} />}
-        actionButtons={
-          isAdmin ? [{
-            label: 'Nuevo Tipo',
-            icon: <IconPlus size={20} />,
-            onClick: () => navigate('/tipos-documento/nuevo'),
-          }] : undefined
+        actionButton={
+          isAdmin ? (
+            <Button 
+              onClick={() => navigate('/tipos-documento/nuevo')}
+              startIcon={<IconPlus size={20} className="text-[#0A36CC]" />}
+              className="bg-white text-[#0A36CC] hover:bg-gray-50 border border-gray-200"
+            >
+              Nuevo Tipo
+            </Button>
+          ) : undefined
         }
       />
 
@@ -112,12 +131,12 @@ const TiposDocumentoPage = () => {
         <div className="flex gap-4">
           <div className="relative flex-1 max-w-md">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
+            <Input
               type="text"
               placeholder="Buscar tipos de documento..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10"
             />
           </div>
         </div>
@@ -126,6 +145,7 @@ const TiposDocumentoPage = () => {
           data={filteredTipos}
           columns={columns}
           isLoading={isLoading}
+          emptyMessage="No hay tipos de documento registrados"
         />
       </div>
 

@@ -14,7 +14,7 @@ import {
   IconTrash,
   IconSearch,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, Badge, DataTable } from '@/components/ui';
+import { PageContainer, PageHeader, Badge, DataTable, ConfirmModal } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { areaService } from '@/services';
 import { usePermissions } from '@/hooks';
@@ -29,6 +29,8 @@ const AreasPage = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteAreaId, setDeleteAreaId] = useState<number | null>(null);
+  const [deleteAreaName, setDeleteAreaName] = useState('');
   const itemsPerPage = 25;
   
   const canWrite = hasPermission('areas_write');
@@ -52,6 +54,8 @@ const AreasPage = () => {
         title: 'Área eliminada',
         description: 'El área ha sido eliminada correctamente',
       });
+      setDeleteAreaId(null);
+      setDeleteAreaName('');
     },
     onError: () => {
       toast({
@@ -59,12 +63,19 @@ const AreasPage = () => {
         description: 'No se pudo eliminar el área',
         variant: 'destructive',
       });
+      setDeleteAreaId(null);
+      setDeleteAreaName('');
     },
   });
 
-  const handleDelete = async (id: number, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar el área "${nombre}"?`)) {
-      deleteMutation.mutate(id);
+  const handleDelete = (id: number, nombre: string) => {
+    setDeleteAreaId(id);
+    setDeleteAreaName(nombre);
+  };
+
+  const confirmDelete = () => {
+    if (deleteAreaId) {
+      deleteMutation.mutate(deleteAreaId);
     }
   };
 
@@ -75,7 +86,6 @@ const AreasPage = () => {
   );
 
   // Paginate filtered areas
-  const totalPages = Math.ceil(filteredAreas.length / itemsPerPage);
   const paginatedAreas = filteredAreas.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -190,18 +200,23 @@ const AreasPage = () => {
           isLoading={isLoading}
           emptyMessage={searchTerm ? 'No se encontraron áreas' : 'No hay áreas registradas'}
         />
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={filteredAreas.length}
-          />
-        )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={!!deleteAreaId}
+        onClose={() => {
+          setDeleteAreaId(null);
+          setDeleteAreaName('');
+        }}
+        onConfirm={confirmDelete}
+        title="Eliminar Área"
+        message={`¿Estás seguro de eliminar el área "${deleteAreaName}"?`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </PageContainer>
   );
 };
