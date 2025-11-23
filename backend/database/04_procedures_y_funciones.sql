@@ -3,6 +3,7 @@
 -- =====================================================
 
 DELIMITER $$
+
 CREATE DEFINER=`root`@`localhost` FUNCTION `fn_obtener_estado_doc`(p_id_estado INT) RETURNS varchar(50) CHARSET utf8mb4 COLLATE utf8mb4_general_ci
     READS SQL DATA
     DETERMINISTIC
@@ -46,9 +47,10 @@ DELIMITER ;
 DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_crear_prestamo`(
     IN p_id_archivador INT,
-    IN p_id_usuario INT,
+    IN p_id_area_solicitante INT,
     IN p_fecha_devolucion DATE,
-    IN p_motivo TEXT
+    IN p_motivo TEXT,
+    IN p_id_usuario INT
 )
 BEGIN
     DECLARE v_estado_actual VARCHAR(20);
@@ -68,15 +70,15 @@ BEGIN
     END IF;
 
     INSERT INTO prestamos_archivadores (
-        id_archivador, id_usuario_solicitante, fecha_devolucion_esperada, motivo, estado
+        id_archivador, id_area_solicitante, fecha_devolucion_esperada, motivo, estado
     ) VALUES (
-        p_id_archivador, p_id_usuario, p_fecha_devolucion, p_motivo, 'Activo'
+        p_id_archivador, p_id_area_solicitante, p_fecha_devolucion, p_motivo, 'Activo'
     );
 
     UPDATE archivadores SET estado = 'En Custodia' WHERE id_archivador = p_id_archivador;
     
     INSERT INTO auditoria (id_usuario, accion, tabla_afectada, id_registro_afectado, accion_detalle)
-    VALUES (p_id_usuario, 'PRESTAMO', 'archivadores', p_id_archivador, 'Archivador prestado');
+    VALUES (p_id_usuario, 'PRESTAMO', 'archivadores', p_id_archivador, CONCAT('Archivador prestado a área ID: ', p_id_area_solicitante));
 
     COMMIT;
 END$$

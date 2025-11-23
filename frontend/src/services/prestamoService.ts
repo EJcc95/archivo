@@ -1,23 +1,28 @@
 import api from '@/api/axios';
-import type { Archivador, Usuario } from '@/types/models';
+import type { Area } from '@/types/models';
 
 export interface Prestamo {
   id_prestamo: number;
   id_archivador: number;
-  id_usuario_solicitante: number;
+  id_area_solicitante: number;
   fecha_prestamo: string;
   fecha_devolucion_esperada: string;
   fecha_devolucion_real?: string;
   motivo: string;
   observaciones?: string;
   estado: 'Activo' | 'Devuelto' | 'Vencido';
-  Archivador?: Archivador;
-  solicitante?: Usuario;
+  Archivador?: {
+    nombre_archivador: string;
+    descripcion?: string;
+  };
+  areaSolicitante?: {
+    nombre_area: string;
+  };
 }
 
 export interface CreatePrestamoRequest {
   id_archivador: number;
-  id_usuario_solicitante: number;
+  id_area_solicitante: number;
   fecha_devolucion_esperada: string;
   motivo: string;
   observaciones?: string;

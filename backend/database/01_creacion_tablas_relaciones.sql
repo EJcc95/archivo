@@ -185,7 +185,7 @@ DROP TABLE IF EXISTS `prestamos_archivadores`;
 CREATE TABLE `prestamos_archivadores` (
   `id_prestamo` int NOT NULL AUTO_INCREMENT,
   `id_archivador` int NOT NULL,
-  `id_usuario_solicitante` int NOT NULL,
+  `id_area_solicitante` int NOT NULL,
   `fecha_prestamo` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `fecha_devolucion_esperada` date NOT NULL,
   `fecha_devolucion_real` timestamp NULL DEFAULT NULL,
@@ -194,9 +194,9 @@ CREATE TABLE `prestamos_archivadores` (
   `estado` enum('Activo', 'Devuelto', 'Vencido') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`id_prestamo`),
   KEY `idx_prestamos_archivador` (`id_archivador`),
-  KEY `idx_prestamos_usuario` (`id_usuario_solicitante`),
+  KEY `idx_prestamos_area_solicitante` (`id_area_solicitante`),
   CONSTRAINT `prestamos_archivadores_ibfk_1` FOREIGN KEY (`id_archivador`) REFERENCES `archivadores` (`id_archivador`),
-  CONSTRAINT `prestamos_archivadores_ibfk_2` FOREIGN KEY (`id_usuario_solicitante`) REFERENCES `usuarios` (`id_usuario`)
+  CONSTRAINT `prestamos_archivadores_ibfk_2` FOREIGN KEY (`id_area_solicitante`) REFERENCES `areas` (`id_area`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Tabla: auditoria

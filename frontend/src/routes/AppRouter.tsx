@@ -30,6 +30,7 @@ const PrestamosPage = lazy(() => import('@/pages/prestamos/PrestamosPage'));
 const PrestamoNuevoPage = lazy(() => import('@/pages/prestamos/PrestamoNuevoPage'));
 const PrestamoEditarPage = lazy(() => import('@/pages/prestamos/PrestamoEditarPage'));
 const PrestamoDetallePage = lazy(() => import('@/pages/prestamos/PrestamoDetallePage'));
+const AuditoriaPage = lazy(() => import('@/pages/auditoria/AuditoriaPage'));
 
 export const AppRouter = () => {
   return (
@@ -71,6 +72,9 @@ export const AppRouter = () => {
           
           {/* Configuración */}
           <Route path="/configuracion" element={<ConfiguracionPage />} />
+          
+          {/* Auditoría */}
+          <Route path="/auditoria" element={<AuditoriaPage />} />
           
           {/* Reportes */}
           <Route path="/reportes" element={<ReportesPage />} />

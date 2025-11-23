@@ -1,20 +1,21 @@
-const { PrestamoArchivador, Archivador, Usuario } = require('../models');
+const { PrestamoArchivador, Archivador, Area } = require('../models');
 const { Op } = require('sequelize');
 
 class PrestamoService {
   async createPrestamo(data) {
-    const { id_archivador, id_usuario_solicitante, fecha_devolucion_esperada, motivo, observaciones } = data;
+    const { id_archivador, id_area_solicitante, fecha_devolucion_esperada, motivo, observaciones } = data;
 
-    // Verificar si el archivador existe y no está prestado
+    // Verificar si el archivador existe
     const archivador = await Archivador.findByPk(id_archivador);
     if (!archivador) throw new Error('Archivador no encontrado');
 
-    // Verificar si ya está prestado (opcional, dependiendo de reglas de negocio)
-    // Por ahora asumimos que se puede prestar si está disponible físicamente
+    // Verificar si el área existe
+    const area = await Area.findByPk(id_area_solicitante);
+    if (!area) throw new Error('Área no encontrada');
 
     return await PrestamoArchivador.create({
       id_archivador,
-      id_usuario_solicitante,
+      id_area_solicitante,
       fecha_devolucion_esperada,
       motivo,
       observaciones,
@@ -31,7 +32,7 @@ class PrestamoService {
       where,
       include: [
         { model: Archivador, attributes: ['nombre_archivador', 'descripcion'] },
-        { model: Usuario, as: 'solicitante', attributes: ['nombres', 'apellidos', 'nombre_usuario'] }
+        { model: Area, as: 'areaSolicitante', attributes: ['nombre_area'] }
       ],
       order: [['fecha_prestamo', 'DESC']]
     });
@@ -41,7 +42,7 @@ class PrestamoService {
     const prestamo = await PrestamoArchivador.findByPk(id, {
       include: [
         { model: Archivador, attributes: ['nombre_archivador', 'descripcion'] },
-        { model: Usuario, as: 'solicitante', attributes: ['nombres', 'apellidos', 'nombre_usuario'] }
+        { model: Area, as: 'areaSolicitante', attributes: ['nombre_area'] }
       ]
     });
     if (!prestamo) throw new Error('Préstamo no encontrado');
@@ -62,9 +63,6 @@ class PrestamoService {
   async updatePrestamo(id, data) {
     const prestamo = await this.getPrestamoById(id);
 
-    // Solo permitir editar si está activo (opcional, dependiendo de reglas)
-    // if (prestamo.estado !== 'Activo') throw new Error('No se puede editar un préstamo inactivo');
-
     return await prestamo.update({
       fecha_devolucion_esperada: data.fecha_devolucion_esperada,
       motivo: data.motivo,
@@ -74,9 +72,6 @@ class PrestamoService {
 
   async deletePrestamo(id) {
     const prestamo = await this.getPrestamoById(id);
-
-    // Opcional: Validar si se puede eliminar (ej. solo si no ha sido devuelto o si es muy reciente)
-
     await prestamo.destroy();
     return true;
   }

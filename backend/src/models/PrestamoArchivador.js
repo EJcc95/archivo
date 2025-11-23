@@ -11,7 +11,7 @@ const PrestamoArchivador = sequelize.define('PrestamoArchivador', {
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  id_usuario_solicitante: {
+  id_area_solicitante: {
     type: DataTypes.INTEGER,
     allowNull: false
   },

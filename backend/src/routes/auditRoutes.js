@@ -7,6 +7,6 @@ const checkPermission = require('../middlewares/permissionMiddleware');
 // Rutas protegidas
 router.use(authMiddleware);
 router.use(checkPermission('system_admin'));
-router.get('/activity', auditController.getAuditLogs);
+router.get('/logs', auditController.getAuditLogs);
 
 module.exports = router;
