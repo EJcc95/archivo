@@ -1,10 +1,24 @@
 const configService = require('../services/configService');
 
+// Transform database field names (Spanish) to API field names (English)
+const transformConfig = (config) => {
+  if (!config) return null;
+
+  return {
+    key: config.clave,
+    value: config.valor,
+    description: config.descripcion,
+    created_at: config.fecha_modificacion,
+    updated_at: config.fecha_modificacion
+  };
+};
+
 class ConfigController {
   async getAllConfigs(req, res, next) {
     try {
       const configs = await configService.getAllConfigs();
-      res.json({ success: true, data: configs });
+      const transformedConfigs = configs.map(transformConfig);
+      res.json({ success: true, data: transformedConfigs });
     } catch (error) {
       next(error);
     }
@@ -12,11 +26,11 @@ class ConfigController {
 
   async getConfig(req, res, next) {
     try {
-      const value = await configService.getConfig(req.params.key);
-      if (value === null) {
+      const config = await configService.getConfigByKey(req.params.key);
+      if (!config) {
         return res.status(404).json({ success: false, message: 'Configuración no encontrada' });
       }
-      res.json({ success: true, data: { key: req.params.key, value } });
+      res.json({ success: true, data: transformConfig(config) });
     } catch (error) {
       next(error);
     }
@@ -26,7 +40,7 @@ class ConfigController {
     try {
       const { key, value, description } = req.body;
       const config = await configService.setConfig(key, value, description);
-      res.json({ success: true, message: 'Configuración guardada', data: config });
+      res.json({ success: true, message: 'Configuración guardada', data: transformConfig(config) });
     } catch (error) {
       next(error);
     }

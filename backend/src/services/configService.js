@@ -6,6 +6,10 @@ class ConfigService {
     return config ? config.valor : null;
   }
 
+  async getConfigByKey(key) {
+    return await Config.findOne({ where: { clave: key } });
+  }
+
   async getAllConfigs() {
     return await Config.findAll();
   }
