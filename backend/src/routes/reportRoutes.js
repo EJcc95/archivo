@@ -12,5 +12,6 @@ router.get('/dashboard', reportController.getDashboardStats);
 router.get('/by-area', reportController.getDocumentosByArea);
 router.get('/by-tipo', reportController.getDocumentosByTipo);
 router.get('/by-estado', reportController.getDocumentosByEstado);
+router.get('/user-activity', reportController.getUserActivity);
 
 module.exports = router;

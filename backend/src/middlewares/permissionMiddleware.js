@@ -15,7 +15,7 @@ const checkPermission = (requiredPermission) => {
       }
 
       // Admin siempre tiene acceso (fallback por seguridad)
-      if (req.user.rol === 'ADMIN') {
+      if (req.user.rol === 'Administrador' || req.user.rol === 'Administrador') {
         return next();
       }
 

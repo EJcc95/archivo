@@ -58,7 +58,7 @@ const RolEditarPage = () => {
     const loadRol = async () => {
       try {
         setLoadingData(true);
-        const data = await roleService.getRoleById(Number(id));
+        const data = await roleService.getById(Number(id));
         setRol(data);
         setFormData({
           nombre_rol: data.nombre_rol,
@@ -125,7 +125,7 @@ const RolEditarPage = () => {
 
     try {
       setLoading(true);
-      await roleService.updateRole(Number(id), formData);
+      await roleService.update(Number(id), formData);
       toast.success('Rol actualizado exitosamente');
       navigate('/roles');
     } catch (error) {

@@ -53,7 +53,7 @@ const RolesPage = () => {
   const loadRoles = async () => {
     try {
       setLoading(true);
-      const data = await roleService.getRoles();
+      const data = await roleService.getAll();
       setRoles(data);
     } catch (error) {
       console.error('Error loading roles:', error);
@@ -83,7 +83,7 @@ const RolesPage = () => {
 
     try {
       setDeleting(true);
-      await roleService.deleteRole(roleToDelete.id_rol);
+      await roleService.delete(roleToDelete.id_rol);
       toast.success(`Rol "${roleToDelete.nombre_rol}" eliminado exitosamente`);
       setDeleteModalOpen(false);
       setRoleToDelete(null);

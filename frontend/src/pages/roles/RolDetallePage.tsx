@@ -63,7 +63,7 @@ const RolDetallePage = () => {
     try {
       setLoading(true);
       const [rolData, usuariosData] = await Promise.all([
-        roleService.getRoleById(Number(id)),
+        roleService.getById(Number(id)),
         roleService.getUsersByRole(Number(id)),
       ]);
       setRol(rolData);
@@ -87,7 +87,7 @@ const RolDetallePage = () => {
 
     try {
       setDeleting(true);
-      await roleService.deleteRole(Number(id));
+      await roleService.delete(Number(id));
       toast.success('Rol eliminado exitosamente');
       navigate('/roles');
     } catch (error) {

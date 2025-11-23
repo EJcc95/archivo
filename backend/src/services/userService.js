@@ -143,7 +143,7 @@ class UserService {
     if (!user) throw new Error('Usuario no encontrado');
 
     // Campos permitidos para admin
-    const allowedFields = ['nombres', 'apellidos', 'id_rol', 'id_area', 'estado'];
+    const allowedFields = ['nombres', 'apellidos', 'email', 'id_rol', 'id_area', 'estado'];
 
     Object.keys(data).forEach(key => {
       if (allowedFields.includes(key)) {

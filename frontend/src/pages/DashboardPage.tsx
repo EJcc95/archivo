@@ -19,16 +19,6 @@ const DashboardPage = () => {
     queryFn: () => reportService.getDashboardStats(),
   });
 
-  // Calcular tendencias basadas en documentos recientes
-  const calculateTrend = (recent: number, total: number) => {
-    if (!total) return undefined;
-    const percentage = ((recent / total) * 100);
-    return {
-      value: Number(percentage.toFixed(1)),
-      isPositive: percentage > 0,
-    };
-  };
-
   // Obtener hora del día para saludo personalizado
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -50,28 +40,25 @@ const DashboardPage = () => {
   const stats = [
     {
       title: 'Total Documentos',
-      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalDocumentos?.toLocaleString() ?? '0'),
+      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.total_documentos?.toLocaleString() ?? '0'),
       icon: <IconFileText size={24} className="text-[#3f37c9]" strokeWidth={2} />,
-      trend: (dashboardStats?.recentDocuments !== undefined && dashboardStats?.totalDocuments !== undefined)
-        ? calculateTrend(dashboardStats.recentDocuments, dashboardStats.totalDocuments)
-        : undefined,
       iconBg: 'bg-[#ecf3ff]',
     },
     {
       title: 'Usuarios Activos',
-      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalUsuarios?.toString() ?? '0'),
+      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.total_usuarios?.toString() ?? '0'),
       icon: <IconUsers size={24} className="text-green-600" strokeWidth={2} />,
       iconBg: 'bg-green-50',
     },
     {
       title: 'Áreas',
-      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalAreas?.toString() ?? '0'),
+      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.total_areas?.toString() ?? '0'),
       icon: <IconFolders size={24} className="text-orange-600" strokeWidth={2} />,
       iconBg: 'bg-orange-50',
     },
     {
       title: 'Archivadores',
-      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.totalArchivadores?.toString() ?? '0'),
+      value: isLoadingStats || !dashboardStats ? '...' : (dashboardStats.total_archivadores?.toString() ?? '0'),
       icon: <IconArchive size={24} className="text-purple-600" strokeWidth={2} />,
       iconBg: 'bg-purple-50',
     },
@@ -137,11 +124,6 @@ const DashboardPage = () => {
                 <div>
                   <div className="text-lg font-bold text-gray-900">{stat.value}</div>
                   <div className="text-sm text-gray-500">{stat.title}</div>
-                  {stat.trend && (
-                    <div className={`mt-1 text-xs font-semibold ${stat.trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                      {stat.trend.isPositive ? '+' : ''}{stat.trend.value}% reciente
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

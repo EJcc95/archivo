@@ -51,6 +51,7 @@ const DocumentosPage = () => {
   });
 
   const documentos = Array.isArray(documentosData) ? documentosData : [];
+  console.log('Documentos Data:', documentosData);
   const areas = Array.isArray(areasData) ? areasData : [];
 
   // Options for SearchableSelect
@@ -271,7 +272,13 @@ const DocumentosPage = () => {
                     <td className="px-6 py-4">
                       <div 
                         className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer"
-                        onClick={() => navigate(`/documentos/${doc.id_documento}`)}
+                        onClick={() => {
+                          if (doc.id_documento) {
+                            navigate(`/documentos/${doc.id_documento}`);
+                          } else {
+                            console.error('Documento ID is missing:', doc);
+                          }
+                        }}
                       >
                         {doc.nombre_documento}
                       </div>

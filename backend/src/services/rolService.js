@@ -1,4 +1,4 @@
-const { Rol, Permiso, RolPermiso } = require('../models');
+const { Rol, Permiso, RolPermiso, Usuario } = require('../models');
 
 class RolService {
   async createRol(data) {
@@ -20,12 +20,28 @@ class RolService {
   }
 
   async getAllRoles() {
-    return await Rol.findAll({
+    const roles = await Rol.findAll({
       include: [{
         model: Permiso,
-        attributes: ['id_permiso', 'nombre_permiso']
+        attributes: ['id_permiso', 'nombre_permiso'],
+        through: { attributes: [] }
       }]
     });
+
+    // Add counts for each role
+    const rolesWithCounts = await Promise.all(roles.map(async (rol) => {
+      const usuariosCount = await Usuario.count({
+        where: { id_rol: rol.id_rol }
+      });
+
+      return {
+        ...rol.toJSON(),
+        usuarios_count: usuariosCount,
+        permisos_count: rol.Permisos ? rol.Permisos.length : 0
+      };
+    }));
+
+    return rolesWithCounts;
   }
 
   async getRolById(id) {
@@ -38,7 +54,12 @@ class RolService {
     });
 
     if (!rol) throw new Error('Rol no encontrado');
-    return rol;
+
+    const rolJSON = rol.toJSON();
+    return {
+      ...rolJSON,
+      permisos: rolJSON.Permisos || []
+    };
   }
 
   async updateRol(id, data) {
@@ -64,11 +85,31 @@ class RolService {
     if (!rol) throw new Error('Rol no encontrado');
 
     // Validar si hay usuarios asignados a este rol antes de borrar
-    // const usersCount = await Usuario.count({ where: { id_rol: id } });
-    // if (usersCount > 0) throw new Error('No se puede eliminar el rol porque tiene usuarios asignados');
+    const usersCount = await Usuario.count({ where: { id_rol: id } });
+    if (usersCount > 0) throw new Error('No se puede eliminar el rol porque tiene usuarios asignados');
 
     await rol.destroy();
     return true;
+  }
+
+  async getAllPermissions() {
+    const permissions = await Permiso.findAll({
+      attributes: ['id_permiso', 'nombre_permiso', 'descripcion'],
+      order: [['nombre_permiso', 'ASC']]
+    });
+    return permissions;
+  }
+
+  async getUsersByRole(roleId) {
+    const usuarios = await Usuario.findAll({
+      where: { id_rol: roleId },
+      attributes: ['id_usuario', 'nombres', 'apellidos', 'nombre_usuario', 'email', 'estado']
+    });
+
+    return {
+      total_usuarios: usuarios.length,
+      usuarios: usuarios
+    };
   }
 }
 

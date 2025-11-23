@@ -90,7 +90,7 @@ const RolNuevoPage = () => {
 
     try {
       setLoading(true);
-      await roleService.createRole(formData);
+      await roleService.create(formData);
       toast.success('Rol creado exitosamente');
       navigate('/roles');
     } catch (error) {

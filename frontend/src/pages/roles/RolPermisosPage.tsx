@@ -62,7 +62,7 @@ const RolPermisosPage = () => {
     try {
       setLoading(true);
       const [rolData, permisosData] = await Promise.all([
-        roleService.getRoleById(Number(id)),
+        roleService.getById(Number(id)),
         permissionService.getPermissions(),
       ]);
 

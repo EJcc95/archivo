@@ -45,6 +45,24 @@ class RolController {
       next(error);
     }
   }
+
+  async getAllPermissions(req, res, next) {
+    try {
+      const permissions = await rolService.getAllPermissions();
+      res.json({ success: true, data: permissions });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getUsersByRole(req, res, next) {
+    try {
+      const result = await rolService.getUsersByRole(req.params.id);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new RolController();

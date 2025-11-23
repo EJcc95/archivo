@@ -80,6 +80,41 @@ class ReportService {
       raw: true
     });
   }
+
+  async getUserActivity(options = {}) {
+    const { limit = 10 } = options;
+
+    // Get most recent user activity from audit logs
+    const activity = await sequelize.query(`
+      SELECT 
+        u.id_usuario,
+        u.nombre_usuario,
+        u.nombres,
+        u.apellidos,
+        MAX(a.fecha_hora) as ultima_actividad,
+        COUNT(a.id_auditoria) as total_acciones
+      FROM usuarios u
+      INNER JOIN auditoria a ON u.id_usuario = a.id_usuario
+      WHERE u.estado = 1
+      GROUP BY u.id_usuario, u.nombre_usuario, u.nombres, u.apellidos
+      ORDER BY ultima_actividad DESC
+      LIMIT :limit
+    `, {
+      replacements: { limit: parseInt(limit) },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    return activity.map(item => ({
+      id_usuario: item.id_usuario,
+      usuario: {
+        nombre_usuario: item.nombre_usuario,
+        nombres: item.nombres,
+        apellidos: item.apellidos
+      },
+      ultima_actividad: item.ultima_actividad,
+      total_acciones: parseInt(item.total_acciones)
+    }));
+  }
 }
 
 module.exports = new ReportService();

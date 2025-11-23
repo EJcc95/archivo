@@ -81,7 +81,7 @@ Archivador.hasMany(PrestamoArchivador, { foreignKey: 'id_archivador' });
 PrestamoArchivador.belongsTo(Archivador, { foreignKey: 'id_archivador' });
 
 Usuario.hasMany(PrestamoArchivador, { foreignKey: 'id_usuario_solicitante' });
-PrestamoArchivador.belongsTo(Usuario, { foreignKey: 'id_usuario_solicitante', as: 'usuarioSolicitante' });
+PrestamoArchivador.belongsTo(Usuario, { foreignKey: 'id_usuario_solicitante', as: 'solicitante' });
 
 // 7. Auditoría
 Usuario.hasMany(Auditoria, { foreignKey: 'id_usuario' });

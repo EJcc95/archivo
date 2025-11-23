@@ -9,9 +9,11 @@ const { createRolValidator, updateRolValidator } = require('../validators/rolVal
 router.use(authMiddleware);
 router.use(checkRole(['Administrador']));
 
+router.get('/permissions/all', rolController.getAllPermissions);
 router.post('/', createRolValidator, rolController.createRol);
 router.get('/', rolController.getAllRoles);
 router.get('/:id', rolController.getRolById);
+router.get('/:id/users', rolController.getUsersByRole);
 router.put('/:id', updateRolValidator, rolController.updateRol);
 router.delete('/:id', rolController.deleteRol);
 
