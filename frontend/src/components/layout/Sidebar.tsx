@@ -45,6 +45,7 @@ const navigation: NavItem[] = [
   { name: 'Préstamos', href: '/prestamos', icon: IconTransfer, permission: 'prestamos_request' },
   { name: 'Reportes', href: '/reportes', icon: IconChartBar, permission: 'docs_stats' },
   { name: 'Configuración', href: '/configuracion', icon: IconSettings, permission: 'system_admin' },
+  { name: 'Tipos Documento', href: '/tipos-documento', icon: IconFileText, permission: 'system_admin' },
   { name: 'Papelera', href: '/documentos/papelera', icon: IconTrash, permission: 'docs_delete' },
   { name: 'Sin Archivador', href: '/documentos/huerfanos', icon: IconAlertCircle, permission: 'docs_edit' },
 ];

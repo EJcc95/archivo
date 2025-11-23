@@ -21,4 +21,6 @@ router.use('/audit', auditRoutes);
 router.use('/config', configRoutes);
 router.use('/reports', reportRoutes);
 
+router.use('/tipos-documento', require('./tipoDocumentoRoutes'));
+
 module.exports = router;

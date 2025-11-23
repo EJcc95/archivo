@@ -288,7 +288,7 @@ const DocumentoNuevoPage = () => {
                 )
                 .map((arch: any) => (
                 <option key={arch.id_archivador} value={arch.id_archivador}>
-                  {arch.nombre_archivador} - {arch.areaPropietaria?.nombre_area}
+                  {arch.nombre_archivador} - {arch.areaPropietaria?.nombre_area} (Ocupado: {arch.total_folios} folios)
                 </option>
               ))}
             </select>

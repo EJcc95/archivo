@@ -417,6 +417,172 @@ class EmailService {
   }
 
   /**
+   * Enviar email de reseteo de contraseña por administrador
+   * @param {string} to - Email destinatario
+   * @param {string} userName - Nombre del usuario
+   * @param {string} fullName - Nombre completo
+   * @param {string} newPassword - Nueva contraseña temporal
+   * @param {string} roleName - Nombre del rol
+   * @returns {Promise<boolean>}
+   */
+  async sendAdminPasswordResetEmail(to, userName, fullName, newPassword, roleName) {
+    if (!this.isConfigured) {
+      logger.warn('EmailService no configurado. No se puede enviar email.');
+      if (process.env.NODE_ENV === 'development') {
+        logger.info('=== EMAIL DE RESETEO DE CONTRASEÑA (MODO DESARROLLO) ===');
+        logger.info(`Para: ${to}`);
+        logger.info(`Nombre completo: ${fullName}`);
+        logger.info(`Usuario: ${userName}`);
+        logger.info(`Nueva contraseña: ${newPassword}`);
+        logger.info(`Rol: ${roleName}`);
+        logger.info('=======================================================');
+      }
+      return false;
+    }
+
+    try {
+      const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+
+      const mailOptions = {
+        from: `"${process.env.SMTP_FROM_NAME || 'Archivo Electrónico Municipal - AEM'}" <${process.env.SMTP_USER}>`,
+        to: to,
+        subject: 'Tu contraseña ha sido restablecida - AEM',
+        html: this.getAdminPasswordResetTemplate(userName, fullName, newPassword, roleName, loginUrl)
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      logger.info(`Email de reseteo por admin enviado a ${to}:`, info.messageId);
+
+      return true;
+
+    } catch (error) {
+      logger.error('Error enviando email de reseteo por admin:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Template HTML para email de reseteo de contraseña por administrador
+   */
+  getAdminPasswordResetTemplate(userName, fullName, newPassword, roleName, loginUrl) {
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contraseña Restablecida</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #3f37c9; padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">
+                Contraseña Restablecida
+              </h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Hola <strong>${fullName}</strong>,
+              </p>
+              
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                El administrador del sistema ha restablecido tu contraseña en el 
+               <strong>Archivo Electrónico Municipal - AEM</strong>.
+              </p>
+              
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                A continuación encontrarás tus nuevas credenciales de acceso:
+              </p>
+              
+              <!-- Credentials Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; margin: 0 0 30px 0; border: 1px solid #e9ecef;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <span style="color: #6c757d; font-size: 14px; display: inline-block; width: 160px;">👤 Usuario:</span>
+                          <span style="color: #212529; font-size: 15px; font-weight: bold;">${userName}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <span style="color: #6c757d; font-size: 14px; display: inline-block; width: 160px;">🔑 Nueva Contraseña:</span>
+                          <span style="color: #212529; font-size: 15px; font-weight: bold; font-family: 'Courier New', monospace; background-color: #ffffff; padding: 4px 8px; border-radius: 4px;">${newPassword}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Warning Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3cd; border-left: 4px solid #ffc107; margin: 0 0 30px 0;">
+                <tr>
+                  <td style="padding: 15px;">
+                    <p style="color: #856404; font-size: 14px; line-height: 1.6; margin: 0;">
+                      ⚠️ <strong>Importante:</strong> Por tu seguridad, te recomendamos cambiar esta contraseña 
+                      después de iniciar sesión. Puedes hacerlo desde tu perfil de usuario.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 0 0 30px 0;">
+                    <a href="${loginUrl}" 
+                       style="background-color: #3f37c9; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+                      Iniciar Sesión
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0 0 10px 0;">
+                Si no solicitaste este cambio, por favor contacta inmediatamente con el administrador del sistema.
+              </p>
+              
+              <p style="color: #333333; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                Saludos cordiales,<br>
+                <strong>Equipo del Archivo Electrónico Municipal</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e9ecef;">
+              <p style="color: #6c757d; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                Este es un mensaje automático, por favor no respondas a este email.
+              </p>
+              <p style="color: #6c757d; font-size: 12px; line-height: 1.6; margin: 10px 0 0 0; text-align: center;">
+                &copy; ${new Date().getFullYear()} Archivo Electrónico Municipal - AEM. Todos los derechos reservados.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+  }
+
+  /**
    * Enviar email genérico
    * @param {Object} options - Opciones del email
    * @returns {Promise<boolean>}

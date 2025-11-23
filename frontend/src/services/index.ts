@@ -9,3 +9,4 @@ export * from './reportService';
 export * from './roleService';
 export * from './userService';
 export * from './passwordResetService';
+export * from './tipoDocumentoService';

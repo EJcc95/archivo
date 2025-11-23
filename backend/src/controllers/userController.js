@@ -83,6 +83,18 @@ class UserController {
       next(error);
     }
   }
+
+  async resetPassword(req, res, next) {
+    try {
+      await userService.resetUserPassword(req.params.id);
+      res.json({
+        success: true,
+        message: 'Contraseña restablecida. Se ha enviado un correo electrónico al usuario.'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new UserController();

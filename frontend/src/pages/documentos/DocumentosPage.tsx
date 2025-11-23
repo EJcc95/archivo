@@ -15,7 +15,7 @@ import {
   IconEye,
   IconRestore,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, SearchableSelect } from '@/components/ui';
 import { documentoService, areaService } from '@/services';
 import { usePermissions } from '@/hooks';
 import { useToast } from '@/components/ui/use-toast';
@@ -30,8 +30,8 @@ const DocumentosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterArea, setFilterArea] = useState('');
-  const [filterEstado, setFilterEstado] = useState('');
+  const [filterArea, setFilterArea] = useState<string | number>('');
+  const [filterEstado, setFilterEstado] = useState<string | number>('');
   const itemsPerPage = 25;
   
   const canWrite = hasPermission('docs_create');
@@ -52,6 +52,23 @@ const DocumentosPage = () => {
 
   const documentos = Array.isArray(documentosData) ? documentosData : [];
   const areas = Array.isArray(areasData) ? areasData : [];
+
+  // Options for SearchableSelect
+  const areaOptions = [
+    { value: '', label: 'Todas las áreas' },
+    ...areas.map((area: any) => ({
+      value: area.id_area,
+      label: area.nombre_area,
+    }))
+  ];
+
+  const estadoOptions = [
+    { value: '', label: 'Todos los estados' },
+    { value: 1, label: 'Registrado' },
+    { value: 2, label: 'En Proceso' },
+    { value: 3, label: 'Archivado' },
+    { value: 4, label: 'Prestado' },
+  ];
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -162,7 +179,7 @@ const DocumentosPage = () => {
 
       <div className="p-6 space-y-6">
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
             <IconSearch
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -173,37 +190,30 @@ const DocumentosPage = () => {
               placeholder="Buscar por nombre o asunto..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-[42px]"
             />
           </div>
 
-          <select
-            value={filterArea}
-            onChange={(e) => { setFilterArea(e.target.value); handleFilterChange(); }}
-            className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Todas las áreas</option>
-            {areas.map((area: any) => (
-              <option key={area.id_area} value={area.id_area}>
-                {area.nombre_area}
-              </option>
-            ))}
-          </select>
+          <div className="w-full lg:w-64">
+            <SearchableSelect
+              options={areaOptions}
+              value={filterArea}
+              onChange={(val: string | number) => { setFilterArea(val); handleFilterChange(); }}
+              placeholder="Todas las áreas"
+            />
+          </div>
 
-          <select
-            value={filterEstado}
-            onChange={(e) => { setFilterEstado(e.target.value); handleFilterChange(); }}
-            className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Todos los estados</option>
-            <option value="1">Registrado</option>
-            <option value="2">En Proceso</option>
-            <option value="3">Archivado</option>
-            <option value="4">Prestado</option>
-          </select>
+          <div className="w-full lg:w-48">
+            <SearchableSelect
+              options={estadoOptions}
+              value={filterEstado}
+              onChange={(val: string | number) => { setFilterEstado(val); handleFilterChange(); }}
+              placeholder="Todos los estados"
+            />
+          </div>
 
           {canDelete && (
-            <label className="flex items-center gap-2 text-sm text-gray-700 whitespace-nowrap">
+            <label className="flex items-center gap-2 text-sm text-gray-700 whitespace-nowrap h-[42px]">
               <input
                 type="checkbox"
                 checked={showDeleted}
@@ -235,6 +245,12 @@ const DocumentosPage = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Área Origen
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Archivador
+                  </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fecha
                   </th>
@@ -250,7 +266,7 @@ const DocumentosPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedDocumentos.map((doc: Documento) => (
+                {paginatedDocumentos.map((doc: any) => (
                   <tr key={doc.id_documento} className={`hover:bg-gray-50 ${doc.eliminado ? 'opacity-50' : ''}`}>
                     <td className="px-6 py-4">
                       <div 
@@ -264,6 +280,16 @@ const DocumentosPage = () => {
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-600">
                         {doc.areaOrigen?.nombre_area || '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600">
+                        {doc.TipoDocumento?.nombre_tipo || '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600">
+                        {doc.Archivador?.nombre_archivador || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">

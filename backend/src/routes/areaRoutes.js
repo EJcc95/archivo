@@ -13,8 +13,8 @@ router.get('/', areaController.getAllAreas);
 router.get('/:id', areaController.getAreaById);
 
 // Rutas protegidas para ADMIN (escritura)
-router.post('/', checkRole(['ADMINISTRADOR']), createAreaValidator, areaController.createArea);
-router.put('/:id', checkRole(['ADMINISTRADOR']), updateAreaValidator, areaController.updateArea);
-router.delete('/:id', checkRole(['ADMINISTRADOR']), areaController.deleteArea);
+router.post('/', checkRole(['Administrador']), createAreaValidator, areaController.createArea);
+router.put('/:id', checkRole(['Administrador']), updateAreaValidator, areaController.updateArea);
+router.delete('/:id', checkRole(['Administrador']), areaController.deleteArea);
 
 module.exports = router;

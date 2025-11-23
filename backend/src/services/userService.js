@@ -6,19 +6,56 @@ const crypto = require('crypto');
 
 class UserService {
 
+  /**
+   * Genera un nombre de usuario único basado en nombres y apellidos
+   */
+  async generateUniqueUsername(nombres, apellidos) {
+    // Normalizar y limpiar los textos
+    const cleanNombres = nombres.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const cleanApellidos = apellidos.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    // Generar username base: primera letra del nombre + apellido
+    const primeraLetra = cleanNombres.charAt(0);
+    const primerApellido = cleanApellidos.split(' ')[0];
+    let baseUsername = primeraLetra + primerApellido;
+
+    // Remover caracteres especiales y espacios
+    baseUsername = baseUsername.replace(/[^a-z0-9]/g, '');
+
+    // Verificar si el username existe
+    let username = baseUsername;
+    let counter = 1;
+
+    while (await Usuario.findOne({ where: { nombre_usuario: username } })) {
+      username = baseUsername + counter;
+      counter++;
+    }
+
+    return username;
+  }
+
   async createUser(data) {
-    // Verificar si el usuario o email ya existen
-    const existingUser = await Usuario.findOne({
-      where: {
-        [require('sequelize').Op.or]: [
-          { email: data.email },
-          { nombre_usuario: data.nombre_usuario }
-        ]
-      }
+    // Verificar si el email ya existe
+    const existingEmail = await Usuario.findOne({
+      where: { email: data.email }
     });
 
-    if (existingUser) {
-      throw new Error('El email o nombre de usuario ya están registrados');
+    if (existingEmail) {
+      throw new Error('El email ya está registrado');
+    }
+
+    // Generar nombre de usuario único si no se proporciona
+    let nombre_usuario = data.nombre_usuario;
+    if (!nombre_usuario || nombre_usuario.trim() === '') {
+      nombre_usuario = await this.generateUniqueUsername(data.nombres, data.apellidos);
+    } else {
+      // Verificar que el nombre de usuario no exista
+      const existingUser = await Usuario.findOne({
+        where: { nombre_usuario: nombre_usuario }
+      });
+      if (existingUser) {
+        throw new Error('El nombre de usuario ya está registrado');
+      }
     }
 
     // Generar contraseña temporal
@@ -28,6 +65,7 @@ class UserService {
     // Crear usuario
     const newUser = await Usuario.create({
       ...data,
+      nombre_usuario,
       password: hashedPassword,
       estado: true
     });
@@ -160,6 +198,46 @@ class UserService {
 
     user.password = await hashPassword(newPassword);
     await user.save();
+
+    return true;
+  }
+
+  /**
+   * Resetear contraseña de usuario (Solo ADMIN)
+   * Genera nueva contraseña y la envía por email
+   */
+  async resetUserPassword(userId) {
+    const user = await Usuario.findByPk(userId, {
+      include: [
+        { model: Rol, attributes: ['nombre_rol'] }
+      ]
+    });
+
+    if (!user) throw new Error('Usuario no encontrado');
+
+    // Generar nueva contraseña temporal
+    const newPassword = crypto.randomBytes(8).toString('hex');
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Actualizar contraseña
+    user.password = hashedPassword;
+    await user.save();
+
+    // Enviar email con nueva contraseña
+    const roleName = user.Rol ? user.Rol.nombre_rol : 'Sin Rol';
+
+    try {
+      await emailService.sendAdminPasswordResetEmail(
+        user.email,
+        user.nombre_usuario,
+        `${user.nombres} ${user.apellidos}`,
+        newPassword,
+        roleName
+      );
+    } catch (err) {
+      console.error('Error enviando email de reseteo:', err);
+      throw new Error('No se pudo enviar el email con la nueva contraseña');
+    }
 
     return true;
   }

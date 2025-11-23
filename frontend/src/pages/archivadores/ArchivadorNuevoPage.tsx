@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArchive, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
 import { PageContainer, PageHeader } from '@/components/ui';
-import { archivadorService, areaService } from '@/services';
+import { archivadorService, areaService, tipoDocumentoService } from '@/services';
 import { useToast } from '@/components/ui/use-toast';
 
 const ArchivadorNuevoPage = () => {
@@ -30,6 +30,14 @@ const ArchivadorNuevoPage = () => {
     queryKey: ['areas'],
     queryFn: areaService.getAll,
   });
+
+  // Fetch tipos documento
+  const { data: tiposDocumentoData } = useQuery({
+    queryKey: ['tiposDocumento'],
+    queryFn: tipoDocumentoService.getAll,
+  });
+
+  const tiposDocumento = Array.isArray(tiposDocumentoData) ? tiposDocumentoData : [];
 
   const createMutation = useMutation({
     mutationFn: archivadorService.create,
@@ -146,6 +154,28 @@ const ArchivadorNuevoPage = () => {
               {Array.isArray(areas) && areas.map((area: any) => (
                 <option key={area.id_area} value={area.id_area}>
                   {area.nombre_area}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tipo de Documento Contenido */}
+          <div>
+            <label htmlFor="id_tipo_documento_contenido" className="block text-sm font-medium text-gray-700 mb-2">
+              Tipo de Documento Contenido <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="id_tipo_documento_contenido"
+              name="id_tipo_documento_contenido"
+              value={formData.id_tipo_documento_contenido}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Seleccione un tipo de documento</option>
+              {tiposDocumento.map((tipo: any) => (
+                <option key={tipo.id_tipo_documento} value={tipo.id_tipo_documento}>
+                  {tipo.nombre_tipo}
                 </option>
               ))}
             </select>

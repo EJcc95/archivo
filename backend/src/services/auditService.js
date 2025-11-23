@@ -11,12 +11,13 @@ class AuditService {
    * @param {string} ipAddress - Dirección IP
    * @param {string} userAgent - User Agent del navegador
    */
-  async logAction(userId, accion, detalles, ipAddress, userAgent) {
+  async logAction(userId, accion, detalles, ipAddress, userAgent, tabla_afectada = null) {
     console.log('AUDIT LOGGING:', userId, accion);
     try {
       await Auditoria.create({
         id_usuario: userId,
         accion,
+        tabla_afectada: tabla_afectada || 'N/A',
         detalles: typeof detalles === 'object' ? JSON.stringify(detalles) : detalles,
         ip_address: ipAddress,
         user_agent: userAgent,

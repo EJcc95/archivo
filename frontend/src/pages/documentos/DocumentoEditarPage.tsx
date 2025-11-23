@@ -410,12 +410,11 @@ const DocumentoEditarPage = () => {
                   )
                   .map((arch: any) => (
                   <option key={arch.id_archivador} value={arch.id_archivador}>
-                    {arch.nombre_archivador} - {arch.areaPropietaria?.nombre_area}
+                    {arch.nombre_archivador} - {arch.areaPropietaria?.nombre_area} (Ocupado: {arch.total_folios} folios)
                   </option>
                 ))}
               </select>
             </div>
-
             {/* Estado */}
             <div>
               <label htmlFor="id_estado" className="block text-sm font-medium text-gray-700 mb-2">

@@ -1,4 +1,4 @@
-const { Documento, Archivador, Area, TipoDocumento, Usuario } = require('../models');
+const { Documento, Archivador, Area, TipoDocumento, Usuario, ConfiguracionSistema } = require('../models');
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 const fs = require('fs');
@@ -64,6 +64,19 @@ class DocumentoService {
       if (Number(archivador.id_tipo_documento_contenido) !== Number(data.id_tipo_documento)) {
         throw new Error('El archivador no corresponde al tipo de documento seleccionado');
       }
+
+      // Validar que el archivador no esté cerrado
+      if (archivador.estado === 'Cerrado') {
+        throw new Error('El archivador seleccionado está CERRADO y no admite más documentos.');
+      }
+
+      // Validar capacidad del archivador
+      const configCapacidad = await ConfiguracionSistema.findOne({ where: { clave: 'capacidad_maxima_archivador' } });
+      const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+      if ((archivador.total_folios + Number(data.numero_folios)) > capacidadMaxima) {
+        throw new Error(`El archivador excedería su capacidad máxima de ${capacidadMaxima} folios. Actual: ${archivador.total_folios}, Nuevo: ${data.numero_folios}`);
+      }
     }
 
     if (file) {
@@ -84,16 +97,24 @@ class DocumentoService {
         numero_consultas: 0
       }, { transaction });
 
-      // Actualizar contador de folios del archivador
+      await transaction.commit();
+
+      // Verificar si el archivador debe cerrarse automáticamente
       if (data.id_archivador) {
-        await Archivador.increment('total_folios', {
-          by: data.numero_folios,
-          where: { id_archivador: data.id_archivador },
-          transaction
-        });
+        try {
+          const archivador = await Archivador.findByPk(data.id_archivador);
+          const configCapacidad = await ConfiguracionSistema.findOne({ where: { clave: 'capacidad_maxima_archivador' } });
+          const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+          if (archivador.total_folios >= capacidadMaxima && archivador.estado !== 'Cerrado') {
+            await archivador.update({ estado: 'Cerrado' });
+            console.log(`Archivador ${archivador.id_archivador} cerrado automáticamente por límite de capacidad.`);
+          }
+        } catch (err) {
+          console.error('Error al verificar cierre automático de archivador:', err);
+        }
       }
 
-      await transaction.commit();
       return documento;
     } catch (error) {
       await transaction.rollback();
@@ -186,6 +207,11 @@ class DocumentoService {
       const archivador = await Archivador.findByPk(data.id_archivador);
       if (!archivador) throw new Error('El archivador seleccionado no existe');
 
+      // Validar que el archivador no esté cerrado
+      if (archivador.estado === 'Cerrado') {
+        throw new Error('El archivador destino está CERRADO y no admite más documentos.');
+      }
+
       // Validar área (usar data.id_area_origen si viene, sino la del documento actual)
       const idAreaOrigen = data.id_area_origen ? Number(data.id_area_origen) : documento.id_area_origen;
       if (Number(archivador.id_area_propietaria) !== idAreaOrigen) {
@@ -196,6 +222,45 @@ class DocumentoService {
       const idTipoDoc = data.id_tipo_documento ? Number(data.id_tipo_documento) : documento.id_tipo_documento;
       if (Number(archivador.id_tipo_documento_contenido) !== idTipoDoc) {
         throw new Error('El archivador no corresponde al tipo de documento');
+      }
+
+      // Validar capacidad (considerando si ya estaba en este archivador o es nuevo)
+      const configCapacidad = await ConfiguracionSistema.findOne({ where: { clave: 'capacidad_maxima_archivador' } });
+      const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+      let foliosAIncrementar = 0;
+      const newFolios = data.numero_folios ? Number(data.numero_folios) : documento.numero_folios;
+
+      if (Number(data.id_archivador) !== documento.id_archivador) {
+        // Cambio de archivador: se suman todos los folios al nuevo
+        foliosAIncrementar = newFolios;
+      } else {
+        // Mismo archivador: solo se suma la diferencia si aumentan
+        foliosAIncrementar = newFolios - documento.numero_folios;
+      }
+
+      if (foliosAIncrementar > 0 && (archivador.total_folios + foliosAIncrementar) > capacidadMaxima) {
+        throw new Error(`El archivador excedería su capacidad máxima de ${capacidadMaxima} folios.`);
+      }
+    } else if (!data.id_archivador && documento.id_archivador && data.numero_folios) {
+      // Caso especial: Mismo archivador (no viene en data, se mantiene el del doc), pero cambian folios
+      // Necesitamos validar si el aumento de folios cabe en el archivador actual
+      const archivador = await Archivador.findByPk(documento.id_archivador);
+      if (archivador) {
+        // Validar si está cerrado (solo si aumentan folios)
+        const newFolios = Number(data.numero_folios);
+        const diff = newFolios - documento.numero_folios;
+
+        if (diff > 0 && archivador.estado === 'Cerrado') {
+          throw new Error('El archivador está CERRADO y no admite aumento de folios.');
+        }
+
+        const configCapacidad = await ConfiguracionSistema.findOne({ where: { clave: 'capacidad_maxima_archivador' } });
+        const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+        if (diff > 0 && (archivador.total_folios + diff) > capacidadMaxima) {
+          throw new Error(`El archivador excedería su capacidad máxima de ${capacidadMaxima} folios.`);
+        }
       }
     }
 
@@ -210,42 +275,8 @@ class DocumentoService {
     const transaction = await sequelize.transaction();
 
     try {
-      // Lógica de actualización de folios
-      const oldArchivadorId = documento.id_archivador;
-      const newArchivadorId = data.id_archivador ? Number(data.id_archivador) : oldArchivadorId;
-      const oldFolios = documento.numero_folios;
-      const newFolios = data.numero_folios ? Number(data.numero_folios) : oldFolios;
-
-      // Caso 1: Cambio de archivador
-      if (oldArchivadorId !== newArchivadorId) {
-        // Restar del viejo
-        if (oldArchivadorId) {
-          await Archivador.decrement('total_folios', {
-            by: oldFolios,
-            where: { id_archivador: oldArchivadorId },
-            transaction
-          });
-        }
-        // Sumar al nuevo
-        if (newArchivadorId) {
-          await Archivador.increment('total_folios', {
-            by: newFolios,
-            where: { id_archivador: newArchivadorId },
-            transaction
-          });
-        }
-      }
-      // Caso 2: Mismo archivador, cambio de folios
-      else if (newArchivadorId && oldFolios !== newFolios) {
-        const diff = newFolios - oldFolios;
-        if (diff !== 0) {
-          await Archivador.increment('total_folios', {
-            by: diff,
-            where: { id_archivador: newArchivadorId },
-            transaction
-          });
-        }
-      }
+      // Nota: La actualización de folios del archivador se maneja vía Trigger en BD
+      // Solo actualizamos el documento
 
       await documento.update({
         ...data,
@@ -255,6 +286,24 @@ class DocumentoService {
       }, { transaction });
 
       await transaction.commit();
+
+      // Verificar cierre automático del archivador (si hubo cambio de archivador o aumento de folios)
+      const targetArchivadorId = data.id_archivador || documento.id_archivador;
+      if (targetArchivadorId) {
+        try {
+          const archivador = await Archivador.findByPk(targetArchivadorId);
+          const configCapacidad = await ConfiguracionSistema.findOne({ where: { clave: 'capacidad_maxima_archivador' } });
+          const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+          if (archivador.total_folios >= capacidadMaxima && archivador.estado !== 'Cerrado') {
+            await archivador.update({ estado: 'Cerrado' });
+            console.log(`Archivador ${archivador.id_archivador} cerrado automáticamente por límite de capacidad.`);
+          }
+        } catch (err) {
+          console.error('Error al verificar cierre automático de archivador:', err);
+        }
+      }
+
       return this.getDocumentoById(id);
     } catch (error) {
       await transaction.rollback();
@@ -275,14 +324,7 @@ class DocumentoService {
         id_usuario_eliminacion: userId
       }, { transaction });
 
-      // Restar folios del archivador al enviar a papelera
-      if (documento.id_archivador) {
-        await Archivador.decrement('total_folios', {
-          by: documento.numero_folios,
-          where: { id_archivador: documento.id_archivador },
-          transaction
-        });
-      }
+      // Nota: Trigger maneja la resta de folios
 
       await transaction.commit();
       return true;
@@ -312,16 +354,26 @@ class DocumentoService {
         id_usuario_eliminacion: null
       }, { transaction });
 
-      // Sumar folios al archivador al restaurar
-      if (documento.id_archivador) {
-        await Archivador.increment('total_folios', {
-          by: documento.numero_folios,
-          where: { id_archivador: documento.id_archivador },
-          transaction
-        });
-      }
+      // Nota: Trigger maneja la suma de folios
 
       await transaction.commit();
+
+      // Verificar cierre automático del archivador tras restaurar
+      if (documento.id_archivador) {
+        try {
+          const archivador = await Archivador.findByPk(documento.id_archivador);
+          const configCapacidad = await ConfiguracionSistema.findOne({ where: { clave: 'capacidad_maxima_archivador' } });
+          const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+          if (archivador.total_folios >= capacidadMaxima && archivador.estado !== 'Cerrado') {
+            await archivador.update({ estado: 'Cerrado' });
+            console.log(`Archivador ${archivador.id_archivador} cerrado automáticamente tras restauración de documento.`);
+          }
+        } catch (err) {
+          console.error('Error al verificar cierre automático de archivador en restauración:', err);
+        }
+      }
+
       return true;
     } catch (error) {
       await transaction.rollback();
@@ -349,17 +401,6 @@ class DocumentoService {
           fs.unlinkSync(fullPath);
         }
       }
-    }
-
-    // Nota: No es necesario restar folios aquí porque hardDelete solo se llama después de softDelete (donde ya se restaron),
-    // O si se implementa directo, habría que restar. Asumimos flujo normal soft -> hard.
-    // Si el documento NO estaba eliminado (caso raro de hard delete directo), habría que restar.
-    // Por seguridad, verificamos:
-    if (!documento.eliminado && documento.id_archivador) {
-      await Archivador.decrement('total_folios', {
-        by: documento.numero_folios,
-        where: { id_archivador: documento.id_archivador }
-      });
     }
 
     await documento.destroy();

@@ -33,5 +33,9 @@ export const userService = {
   changePassword: async (passwords: any) => {
     const { data } = await api.put('/users/change-password', passwords);
     return data.data;
+  },
+  resetPassword: async (id: number) => {
+    const { data } = await api.post(`/users/${id}/reset-password`);
+    return data;
   }
 };

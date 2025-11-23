@@ -23,7 +23,7 @@ router.delete('/:id', authMiddleware, documentoController.softDeleteDocumento); 
 router.put('/:id/restore', authMiddleware, documentoController.restoreDocumento); // Restaurar
 
 // Eliminación física (Solo Admin)
-router.delete('/:id/destroy', authMiddleware, checkRole(['ADMINISTRADOR']), documentoController.hardDeleteDocumento);
+router.delete('/:id/destroy', authMiddleware, checkRole(['Administrador']), documentoController.hardDeleteDocumento);
 
 module.exports = router;
 
@@ -37,6 +37,6 @@ router.delete('/:id', documentoController.softDeleteDocumento); // Mover a papel
 router.put('/:id/restore', documentoController.restoreDocumento); // Restaurar
 
 // Eliminación física (Solo Admin)
-router.delete('/:id/destroy', checkRole(['ADMINISTRADOR']), documentoController.hardDeleteDocumento);
+router.delete('/:id/destroy', checkRole(['Administrador']), documentoController.hardDeleteDocumento);
 
 module.exports = router;
