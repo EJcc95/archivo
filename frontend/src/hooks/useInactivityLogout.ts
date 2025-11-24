@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/auth';
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutos
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutos
 const WARNING_TIME = 1 * 60 * 1000; // 1 minuto antes del logout (total 4 min)
 const STORAGE_KEY = 'lastActivity';
 const SESSION_BROADCAST_CHANNEL = 'session_activity';
