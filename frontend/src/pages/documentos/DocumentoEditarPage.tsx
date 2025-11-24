@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconFileText, IconArrowLeft, IconDeviceFloppy, IconUpload, IconCheck, IconX } from '@tabler/icons-react';
-import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, CardFooter, SearchableSelect } from '@/components/ui';
+import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, CardFooter, SearchableSelect, UploadProgressModal } from '@/components/ui';
 import { documentoService, areaService, archivadorService } from '@/services';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -35,6 +35,8 @@ const DocumentoEditarPage = () => {
   const [newFile, setNewFile] = useState<File | null>(null);
   const [updateFile, setUpdateFile] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   // Fetch documento
   const { data: documento, isLoading } = useQuery({
@@ -96,7 +98,18 @@ const DocumentoEditarPage = () => {
   }, [documento]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => documentoService.update(Number(id), data),
+    mutationFn: (data: any) => {
+      // Check if we are uploading a file (FormData)
+      if (data instanceof FormData) {
+        setShowProgressModal(true);
+        setUploadProgress(0);
+        return documentoService.update(Number(id), data, (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
+        });
+      }
+      return documentoService.update(Number(id), data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       queryClient.invalidateQueries({ queryKey: ['documento', id] });
@@ -105,6 +118,10 @@ const DocumentoEditarPage = () => {
         description: 'El documento ha sido actualizado correctamente',
       });
       navigate('/documentos');
+    },
+    onSettled: () => {
+      setShowProgressModal(false);
+      setUploadProgress(0);
     },
     onError: () => {
       toast({
@@ -512,6 +529,14 @@ const DocumentoEditarPage = () => {
           </form>
         </div>
       </div>
+
+
+      <UploadProgressModal
+        isOpen={showProgressModal}
+        progress={uploadProgress}
+        fileName={newFile?.name}
+        title="Actualizando documento"
+      />
     </PageContainer>
   );
 };

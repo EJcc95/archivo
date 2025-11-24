@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconFileText, IconArrowLeft, IconDeviceFloppy, IconUpload } from '@tabler/icons-react';
-import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, CardFooter, SearchableSelect } from '@/components/ui';
+import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, SearchableSelect, UploadProgressModal } from '@/components/ui';
 import { documentoService, areaService, archivadorService } from '@/services';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -33,6 +33,8 @@ const DocumentoNuevoPage = () => {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   // Fetch areas
   const { data: areasData } = useQuery({
@@ -68,7 +70,14 @@ const DocumentoNuevoPage = () => {
     }));
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => documentoService.create(data),
+    mutationFn: (data: FormData) => {
+      setShowProgressModal(true);
+      setUploadProgress(0);
+      return documentoService.create(data, (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        setUploadProgress(percentCompleted);
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       toast({
@@ -76,6 +85,10 @@ const DocumentoNuevoPage = () => {
         description: 'El documento ha sido registrado correctamente',
       });
       navigate('/documentos');
+    },
+    onSettled: () => {
+      setShowProgressModal(false);
+      setUploadProgress(0);
     },
     onError: (error: any) => {
       toast({
@@ -186,37 +199,158 @@ const DocumentoNuevoPage = () => {
       />
 
       <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Información Básica */}
-            <Card>
-              <CardHeader
-                title="Información Básica"
-                subtitle="Datos principales del documento"
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Nombre */}
-                  <FormField
-                    label="Nombre del Documento"
-                    required
-                    error={errors.nombre_documento}
-                    htmlFor="nombre_documento"
-                  >
-                    <input
-                      type="text"
-                      id="nombre_documento"
-                      name="nombre_documento"
-                      value={formData.nombre_documento}
-                      onChange={handleChange}
-                      maxLength={100}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    />
-                  </FormField>
 
-                  {/* Fecha */}
+        <div className="max-w-7xl mx-auto">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Left Column - Main Content (2/3) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Información Básica */}
+              <Card>
+                <CardHeader
+                  title="Detalles del Documento"
+                  subtitle="Información principal"
+                />
+                <CardBody>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      <FormField
+                        label="Área de Origen"
+                        required
+                        error={errors.id_area_origen}
+                      >
+                        <SearchableSelect
+                          options={areaOptions}
+                          value={formData.id_area_origen}
+                          onChange={(value) => {
+                            setFormData((prev) => ({ ...prev, id_area_origen: Number(value) }));
+                            if (errors.id_area_origen) {
+                              setErrors((prev) => ({ ...prev, id_area_origen: '' }));
+                            }
+                          }}
+                          placeholder="Seleccione origen"
+                          error={!!errors.id_area_origen}
+                        />
+                      </FormField>
+
+                      <FormField label="Archivador">
+                        <SearchableSelect
+                          options={archivadorOptions}
+                          value={formData.id_archivador}
+                          onChange={(value) => setFormData((prev) => ({ ...prev, id_archivador: Number(value) }))}
+                          placeholder="Seleccione archivador"
+                          emptyMessage={formData.id_area_origen ? "No hay archivadores" : "Seleccione área origen"}
+                        />
+                      </FormField>
+                      
+                      <FormField
+                        label="Nombre del Documento"
+                        required
+                        error={errors.nombre_documento}
+                        htmlFor="nombre_documento"
+                        className="md:col-span-2"
+                      >
+                        <input
+                          type="text"
+                          id="nombre_documento"
+                          name="nombre_documento"
+                          value={formData.nombre_documento}
+                          onChange={handleChange}
+                          maxLength={100}
+                          placeholder="Ej: Informe Mensual de Actividades..."
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent font-medium"
+                        />
+                      </FormField>
+
+                    </div>
+
+                    <FormField
+                      label="Asunto"
+                      required
+                      error={errors.asunto}
+                      htmlFor="asunto"
+                    >
+                      <textarea
+                        id="asunto"
+                        name="asunto"
+                        value={formData.asunto}
+                        onChange={handleChange}
+                        rows={4}
+                        placeholder="Descripción breve del contenido del documento..."
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
+                      />
+                    </FormField>
+
+                    <FormField label="Observaciones">
+                      <textarea
+                        id="observaciones"
+                        name="observaciones"
+                        value={formData.observaciones}
+                        onChange={handleChange}
+                        rows={3}
+                        placeholder="Notas adicionales (opcional)..."
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
+                      />
+                    </FormField>
+                  </div>
+                </CardBody>
+              </Card>
+              {/* Archivo Digital (Prominent) */}
+              <Card className="border-blue-100 shadow-md">
+                <CardHeader
+                  title="Archivo Digital"
+                  subtitle="Adjunte el documento PDF (Máx. 400MB)"
+                />
+                <CardBody>
+                  <div className="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-blue-100 border-dashed rounded-xl hover:border-[#032DFF] hover:bg-blue-50/30 transition-all group cursor-pointer">
+                    <div className="space-y-2 text-center">
+                      <div className="mx-auto h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <IconUpload className="h-8 w-8 text-[#032DFF]" />
+                      </div>
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <label
+                          htmlFor="archivo"
+                          className="relative cursor-pointer rounded-md font-medium text-[#032DFF] hover:text-[#0225cc] focus-within:outline-none"
+                        >
+                          <span>Subir archivo PDF</span>
+                          <input
+                            id="archivo"
+                            name="archivo"
+                            type="file"
+                            accept=".pdf"
+                            onChange={handleFileChange}
+                            className="sr-only"
+                          />
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500">Arrastrar y soltar o hacer clic</p>
+                      {selectedFile && (
+                        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                          <IconFileText size={14} />
+                          {selectedFile.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Right Column - Metadata & Actions (1/3) */}
+            <div className="space-y-6">
+              
+              
+
+              {/* Clasificación */}
+              <Card>
+                <CardHeader
+                  title="Clasificación"
+                  subtitle="Metadatos del documento"
+                />
+                <CardBody className="space-y-5">
                   <FormField
-                    label="Fecha del Documento"
+                    label="Fecha"
                     required
                     htmlFor="fecha_documento"
                   >
@@ -229,69 +363,7 @@ const DocumentoNuevoPage = () => {
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
                     />
                   </FormField>
-                </div>
 
-                {/* Asunto */}
-                <FormField
-                  label="Asunto"
-                  required
-                  error={errors.asunto}
-                  htmlFor="asunto"
-                  className="mt-6"
-                >
-                  <textarea
-                    id="asunto"
-                    name="asunto"
-                    value={formData.asunto}
-                    onChange={handleChange}
-                    rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
-                  />
-                </FormField>
-              </CardBody>
-            </Card>
-
-            {/* Áreas y Clasificación */}
-            <Card>
-              <CardHeader
-                title="Áreas y Clasificación"
-                subtitle="Información de procedencia y destino"
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Área Origen */}
-                  <FormField
-                    label="Área de Origen"
-                    required
-                    error={errors.id_area_origen}
-                  >
-                    <SearchableSelect
-                      options={areaOptions}
-                      value={formData.id_area_origen}
-                      onChange={(value) => {
-                        setFormData((prev) => ({ ...prev, id_area_origen: Number(value) }));
-                        if (errors.id_area_origen) {
-                          setErrors((prev) => ({ ...prev, id_area_origen: '' }));
-                        }
-                      }}
-                      placeholder="Seleccione área"
-                      error={!!errors.id_area_origen}
-                    />
-                  </FormField>
-
-                  {/* Área Destino */}
-                  <FormField
-                    label="Área de Destino"
-                  >
-                    <SearchableSelect
-                      options={areaOptions}
-                      value={formData.id_area_destino}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, id_area_destino: Number(value) }))}
-                      placeholder="Seleccione área"
-                    />
-                  </FormField>
-
-                  {/* Número de Folios */}
                   <FormField
                     label="Número de Folios"
                     required
@@ -307,106 +379,58 @@ const DocumentoNuevoPage = () => {
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
                     />
                   </FormField>
-                </div>
-              </CardBody>
-            </Card>
 
-            {/* Archivador */}
-            <Card>
-              <CardHeader
-                title="Archivador"
-                subtitle="Seleccione el archivador donde se almacenará físicamente"
-              />
-              <CardBody>
-                <FormField label="Archivador" help="Seleccione un archivador que corresponda al área y tipo de documento">
-                  <SearchableSelect
-                    options={archivadorOptions}
-                    value={formData.id_archivador}
-                    onChange={(value) => setFormData((prev) => ({ ...prev, id_archivador: Number(value) }))}
-                    placeholder="Seleccione archivador"
-                    emptyMessage={formData.id_area_origen ? "No hay archivadores disponibles para esta área" : "Seleccione primero un área de origen"}
-                  />
-                </FormField>
-              </CardBody>
-            </Card>
-
-            {/* Archivo Digital y Observaciones */}
-            <Card>
-              <CardHeader
-                title="Información Adicional"
-                subtitle="Archivo digital y observaciones"
-              />
-              <CardBody>
-                {/* Upload File */}
-                <FormField label="Archivo PDF" help="Tamaño máximo: 400MB">
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#032DFF] transition-colors">
-                    <div className="space-y-1 text-center">
-                      <IconUpload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label
-                          htmlFor="archivo"
-                          className="relative cursor-pointer bg-white rounded-md font-medium text-[#032DFF] hover:text-[#0225cc] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#032DFF]"
-                        >
-                          <span>Subir archivo</span>
-                          <input
-                            id="archivo"
-                            name="archivo"
-                            type="file"
-                            accept=".pdf"
-                            onChange={handleFileChange}
-                            className="sr-only"
-                          />
-                        </label>
-                        <p className="pl-1">o arrastrar y soltar</p>
-                      </div>
-                      <p className="text-xs text-gray-500">PDF hasta 400MB</p>
-                      {selectedFile && (
-                        <p className="text-sm text-green-600 font-medium mt-2">
-                          ✓ Archivo seleccionado: {selectedFile.name}
-                        </p>
-                      )}
-                    </div>
+                  <div className="pt-4 border-t border-gray-100">
+                    <FormField
+                      label="Área de Destino"
+                    >
+                      <SearchableSelect
+                        options={areaOptions}
+                        value={formData.id_area_destino}
+                        onChange={(value) => setFormData((prev) => ({ ...prev, id_area_destino: Number(value) }))}
+                        placeholder="Seleccione destino"
+                      />
+                    </FormField>
                   </div>
-                </FormField>
+                </CardBody>
+              </Card>
 
-                {/* Observaciones */}
-                <FormField label="Observaciones" className="mt-6">
-                  <textarea
-                    id="observaciones"
-                    name="observaciones"
-                    value={formData.observaciones}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Detalles adicionales del documento..."
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
-                  />
-                </FormField>
-              </CardBody>
 
-              <CardFooter>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={createMutation.isPending}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-                  >
-                    <IconDeviceFloppy size={18} />
-                    {createMutation.isPending ? 'Guardando...' : 'Guardar Documento'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/documentos')}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-                  >
-                    <IconArrowLeft size={18} />
-                    Cancelar
-                  </button>
-                </div>
-              </CardFooter>
-            </Card>
+
+              {/* Actions Card (Sticky-ish) */}
+              <Card className="bg-gray-50/50 border-blue-100">
+                <CardBody>
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="submit"
+                      disabled={createMutation.isPending}
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-blue-500/40"
+                    >
+                      <IconDeviceFloppy size={20} />
+                      {createMutation.isPending ? 'Guardando...' : 'Guardar Documento'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/documentos')}
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-white font-medium transition-colors"
+                    >
+                      <IconArrowLeft size={18} />
+                      Cancelar
+                    </button>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
           </form>
         </div>
       </div>
+
+      
+      <UploadProgressModal
+        isOpen={showProgressModal}
+        progress={uploadProgress}
+        fileName={selectedFile?.name}
+      />
     </PageContainer>
   );
 };

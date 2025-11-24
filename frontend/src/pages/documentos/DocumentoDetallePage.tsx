@@ -20,6 +20,7 @@ import {
 import { PageContainer, PageHeader, Card, CardHeader, CardBody, Badge } from '@/components/ui';
 import { documentoService } from '@/services';
 import { usePermissions } from '@/hooks';
+import toast from 'react-hot-toast';
 
 const DocumentoDetallePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -271,21 +272,29 @@ const DocumentoDetallePage = () => {
                   </div>
                   {documento.ruta_archivo_digital && (
                     <button
-                      onClick={async () => {
-                        try {
-                          const blob = await documentoService.download(documento.id_documento);
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `${documento.nombre_documento}.pdf`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        } catch (error) {
-                          console.error('Error downloading:', error);
-                        }
-                      }}
+                        onClick={async () => {
+                          const toastId = toast.loading('Iniciando descarga...');
+                          try {
+                            const blob = await documentoService.download(documento.id_documento, (progressEvent) => {
+                              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                              toast.loading(`Descargando: ${percentCompleted}%`, { id: toastId });
+                            });
+                            
+                            toast.success('Descarga completada', { id: toastId });
+                            
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${documento.nombre_documento}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          } catch (error) {
+                            console.error('Error downloading:', error);
+                            toast.error('Error al descargar el documento', { id: toastId });
+                          }
+                        }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#032DFF] text-white text-sm rounded-lg hover:bg-[#0225cc] transition-colors"
                     >
                       <IconDownload size={16} />
