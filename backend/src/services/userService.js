@@ -78,7 +78,7 @@ class UserService {
     // No bloqueamos la respuesta si falla el email, pero lo logueamos
     emailService.sendWelcomeEmail(
       newUser.email,
-      newUser.nombre_usuario,
+      newUser.email,
       `${newUser.nombres} ${newUser.apellidos}`,
       temporaryPassword,
       roleName
@@ -229,7 +229,7 @@ class UserService {
     try {
       await emailService.sendAdminPasswordResetEmail(
         user.email,
-        user.nombre_usuario,
+        user.email,
         `${user.nombres} ${user.apellidos}`,
         newPassword,
         roleName

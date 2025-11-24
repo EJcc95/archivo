@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconUserPlus, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
-import { PageContainer, PageHeader, SearchableSelect, Card, CardHeader, CardBody, CardFooter, FormField } from '@/components/ui';
+import { PageContainer, PageHeader, SearchableSelect, Card, CardHeader, CardBody, FormField } from '@/components/ui';
 import { userService } from '@/services';
 import { roleService } from '@/services/roleService';
 import { areaService } from '@/services';
@@ -147,7 +147,7 @@ const UsuarioNuevoPage = () => {
       />
 
       <div className="p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Info Alert */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -166,148 +166,156 @@ const UsuarioNuevoPage = () => {
               </div>
             </div>
 
-            <Card>
-              <CardHeader
-                title="Información Personal"
-                subtitle="Datos básicos del usuario"
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Nombres */}
-                  <FormField
-                    label="Nombres"
-                    required
-                    error={errors.nombres}
-                    htmlFor="nombres"
-                  >
-                    <input
-                      type="text"
-                      id="nombres"
-                      name="nombres"
-                      value={formData.nombres}
-                      onChange={handleChange}
-                      maxLength={75}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                      placeholder="Ej: John"
-                    />
-                  </FormField>
-
-                  {/* Apellidos */}
-                  <FormField
-                    label="Apellidos"
-                    required
-                    error={errors.apellidos}
-                    htmlFor="apellidos"
-                  >
-                    <input
-                      type="text"
-                      id="apellidos"
-                      name="apellidos"
-                      value={formData.apellidos}
-                      onChange={handleChange}
-                      maxLength={100}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                      placeholder="Ej: Doe"
-                    />
-                  </FormField>
-                </div>
-
-                {/* Email */}
-                <FormField
-                  label="Email"
-                  required
-                  error={errors.email}
-                  htmlFor="email"
-                  className="mt-6"
-                >
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    maxLength={100}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    placeholder="Ej: john.doe@ejemplo.com"
-                  />
-                </FormField>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardHeader
-                title="Rol y Permisos"
-                subtitle="Configuración de acceso y ubicación"
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Rol */}
-                  <FormField
-                    label="Rol"
-                    required
-                    error={errors.id_rol}
-                  >
-                    <SearchableSelect
-                      options={rolOptions}
-                      value={formData.id_rol}
-                      onChange={(val: string | number) => {
-                        setFormData(prev => ({ ...prev, id_rol: Number(val) }));
-                        if (errors.id_rol) setErrors(prev => ({ ...prev, id_rol: '' }));
-                      }}
-                      placeholder="Seleccione un rol"
-                      error={!!errors.id_rol}
-                    />
-                  </FormField>
-
-                  {/* Área */}
-                  <FormField
-                    label="Área"
-                    help="Opcional"
-                  >
-                    <SearchableSelect
-                      options={areaOptions}
-                      value={formData.id_area}
-                      onChange={(val: string | number) => setFormData(prev => ({ ...prev, id_area: Number(val) }))}
-                      placeholder="Seleccione un área"
-                    />
-                  </FormField>
-                </div>
-
-                {/* Estado */}
-                <div className="mt-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="estado"
-                      checked={formData.estado}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Usuario activo</span>
-                  </label>
-                </div>
-              </CardBody>
+            {/* Cards Grid - Side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
-              <CardFooter>
-                <div className="flex items-center gap-3">
+              {/* Left Card - Información Personal */}
+              <Card>
+                <CardHeader
+                  title="Información Personal"
+                  subtitle="Datos básicos del usuario"
+                />
+                <CardBody>
+                  <div className="space-y-6">
+                    {/* Nombres */}
+                    <FormField
+                      label="Nombres"
+                      required
+                      error={errors.nombres}
+                      htmlFor="nombres"
+                    >
+                      <input
+                        type="text"
+                        id="nombres"
+                        name="nombres"
+                        value={formData.nombres}
+                        onChange={handleChange}
+                        maxLength={75}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        placeholder="Ej: John"
+                      />
+                    </FormField>
+
+                    {/* Apellidos */}
+                    <FormField
+                      label="Apellidos"
+                      required
+                      error={errors.apellidos}
+                      htmlFor="apellidos"
+                    >
+                      <input
+                        type="text"
+                        id="apellidos"
+                        name="apellidos"
+                        value={formData.apellidos}
+                        onChange={handleChange}
+                        maxLength={100}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        placeholder="Ej: Doe"
+                      />
+                    </FormField>
+
+                    {/* Email */}
+                    <FormField
+                      label="Email"
+                      required
+                      error={errors.email}
+                      htmlFor="email"
+                    >
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        maxLength={100}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        placeholder="Ej: john.doe@ejemplo.com"
+                      />
+                    </FormField>
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Right Card - Rol y Permisos */}
+              <Card>
+                <CardHeader
+                  title="Rol y Permisos"
+                  subtitle="Configuración de acceso y ubicación"
+                />
+                <CardBody>
+                  <div className="space-y-6">
+                    {/* Rol */}
+                    <FormField
+                      label="Rol"
+                      required
+                      error={errors.id_rol}
+                    >
+                      <SearchableSelect
+                        options={rolOptions}
+                        value={formData.id_rol}
+                        onChange={(val: string | number) => {
+                          setFormData(prev => ({ ...prev, id_rol: Number(val) }));
+                          if (errors.id_rol) setErrors(prev => ({ ...prev, id_rol: '' }));
+                        }}
+                        placeholder="Seleccione un rol"
+                        error={!!errors.id_rol}
+                      />
+                    </FormField>
+
+                    {/* Área */}
+                    <FormField
+                      label="Área"
+                      help="Opcional"
+                    >
+                      <SearchableSelect
+                        options={areaOptions}
+                        value={formData.id_area}
+                        onChange={(val: string | number) => setFormData(prev => ({ ...prev, id_area: Number(val) }))}
+                        placeholder="Seleccione un área"
+                      />
+                    </FormField>
+
+                    {/* Estado */}
+                    <div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="estado"
+                          checked={formData.estado}
+                          onChange={handleChange}
+                          className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Usuario activo</span>
+                      </label>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Actions Card */}
+            <Card className="border-blue-200 bg-linear-to-br from-white to-blue-50/30 lg:w-1/2">
+              <CardBody>
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-2 bg-linear-to-r from-[#032DFF] to-[#0225cc] text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 text-xs"
                   >
-                    <IconDeviceFloppy size={18} />
+                    <IconDeviceFloppy size={16} />
                     {createMutation.isPending ? 'Creando...' : 'Crear Usuario'}
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate('/usuarios')}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-2 border-2 border-gray-200 text-gray-600 rounded-lg hover:border-gray-300 hover:bg-gray-50 font-medium transition-all duration-200 text-xs"
                   >
-                    <IconArrowLeft size={18} />
+                    <IconArrowLeft size={16} />
                     Cancelar
                   </button>
                 </div>
-              </CardFooter>
+              </CardBody>
             </Card>
           </form>
         </div>

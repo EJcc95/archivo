@@ -271,7 +271,7 @@ const UsuariosPage = () => {
             />
           </div>
 
-          <div className="w-full lg:w-48">
+          <div className="w-full lg:w-64">
             <SearchableSelect
               options={estadoOptions}
               value={filterEstado}

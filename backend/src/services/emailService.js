@@ -216,13 +216,13 @@ class EmailService {
   /**
    * Enviar email de bienvenida a nuevo usuario
    * @param {string} to - Email destinatario
-   * @param {string} userName - Nombre del usuario
+   * @param {string} userEmail - Email del usuario (credencial de acceso)
    * @param {string} fullName - Nombre completo del usuario
    * @param {string} temporaryPassword - Contraseña temporal
    * @param {string} roleName - Nombre del rol asignado
    * @returns {Promise<boolean>}
    */
-  async sendWelcomeEmail(to, userName, fullName, temporaryPassword, roleName) {
+  async sendWelcomeEmail(to, userEmail, fullName, temporaryPassword, roleName) {
     if (!this.isConfigured) {
       logger.warn('EmailService no configurado. No se puede enviar email.');
       // En desarrollo, loguear las credenciales para testing
@@ -230,7 +230,7 @@ class EmailService {
         logger.info('=== EMAIL DE BIENVENIDA (MODO DESARROLLO) ===');
         logger.info(`Para: ${to}`);
         logger.info(`Nombre completo: ${fullName}`);
-        logger.info(`Usuario: ${userName}`);
+        logger.info(`Email (acceso): ${userEmail}`);
         logger.info(`Contraseña temporal: ${temporaryPassword}`);
         logger.info(`Rol: ${roleName}`);
         logger.info(`URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`);
@@ -246,7 +246,7 @@ class EmailService {
         from: `"${process.env.SMTP_FROM_NAME || 'Archivo Electrónico Municipal - AEM'}" <${process.env.SMTP_USER}>`,
         to: to,
         subject: 'Bienvenido al Archivo Electrónico Municipal - AEM',
-        html: this.getWelcomeTemplate(userName, fullName, temporaryPassword, roleName, loginUrl)
+        html: this.getWelcomeTemplate(userEmail, fullName, temporaryPassword, roleName, loginUrl)
       };
 
       const info = await this.transporter.sendMail(mailOptions);
@@ -262,14 +262,14 @@ class EmailService {
 
   /**
    * Template HTML para email de bienvenida
-   * @param {string} userName 
+   * @param {string} userEmail 
    * @param {string} fullName 
    * @param {string} temporaryPassword 
    * @param {string} roleName 
    * @param {string} loginUrl 
    * @returns {string}
    */
-  getWelcomeTemplate(userName, fullName, temporaryPassword, roleName, loginUrl) {
+  getWelcomeTemplate(userEmail, fullName, temporaryPassword, roleName, loginUrl) {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -315,8 +315,8 @@ class EmailService {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding: 8px 0;">
-                          <span style="color: #6c757d; font-size: 14px; display: inline-block; width: 140px;">👤 Usuario:</span>
-                          <span style="color: #212529; font-size: 15px; font-weight: bold;">${userName}</span>
+                          <span style="color: #6c757d; font-size: 14px; display: inline-block; width: 140px;">📧 Email:</span>
+                          <span style="color: #212529; font-size: 15px; font-weight: bold;">${userEmail}</span>
                         </td>
                       </tr>
                       <tr>
@@ -419,20 +419,20 @@ class EmailService {
   /**
    * Enviar email de reseteo de contraseña por administrador
    * @param {string} to - Email destinatario
-   * @param {string} userName - Nombre del usuario
+   * @param {string} userEmail - Email del usuario (credencial de acceso)
    * @param {string} fullName - Nombre completo
    * @param {string} newPassword - Nueva contraseña temporal
    * @param {string} roleName - Nombre del rol
    * @returns {Promise<boolean>}
    */
-  async sendAdminPasswordResetEmail(to, userName, fullName, newPassword, roleName) {
+  async sendAdminPasswordResetEmail(to, userEmail, fullName, newPassword, roleName) {
     if (!this.isConfigured) {
       logger.warn('EmailService no configurado. No se puede enviar email.');
       if (process.env.NODE_ENV === 'development') {
         logger.info('=== EMAIL DE RESETEO DE CONTRASEÑA (MODO DESARROLLO) ===');
         logger.info(`Para: ${to}`);
         logger.info(`Nombre completo: ${fullName}`);
-        logger.info(`Usuario: ${userName}`);
+        logger.info(`Email (acceso): ${userEmail}`);
         logger.info(`Nueva contraseña: ${newPassword}`);
         logger.info(`Rol: ${roleName}`);
         logger.info('=======================================================');
@@ -447,7 +447,7 @@ class EmailService {
         from: `"${process.env.SMTP_FROM_NAME || 'Archivo Electrónico Municipal - AEM'}" <${process.env.SMTP_USER}>`,
         to: to,
         subject: 'Tu contraseña ha sido restablecida - AEM',
-        html: this.getAdminPasswordResetTemplate(userName, fullName, newPassword, roleName, loginUrl)
+        html: this.getAdminPasswordResetTemplate(userEmail, fullName, newPassword, roleName, loginUrl)
       };
 
       const info = await this.transporter.sendMail(mailOptions);
@@ -464,7 +464,7 @@ class EmailService {
   /**
    * Template HTML para email de reseteo de contraseña por administrador
    */
-  getAdminPasswordResetTemplate(userName, fullName, newPassword, roleName, loginUrl) {
+  getAdminPasswordResetTemplate(userEmail, fullName, newPassword, roleName, loginUrl) {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -511,8 +511,8 @@ class EmailService {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding: 8px 0;">
-                          <span style="color: #6c757d; font-size: 14px; display: inline-block; width: 160px;">👤 Usuario:</span>
-                          <span style="color: #212529; font-size: 15px; font-weight: bold;">${userName}</span>
+                          <span style="color: #6c757d; font-size: 14px; display: inline-block; width: 160px;">📧 Email:</span>
+                          <span style="color: #212529; font-size: 15px; font-weight: bold;">${userEmail}</span>
                         </td>
                       </tr>
                       <tr>
