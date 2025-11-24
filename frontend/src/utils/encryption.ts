@@ -78,8 +78,8 @@ export function decryptData<T>(encryptedString: string): T | null {
 
     const { data, timestamp } = JSON.parse(decryptedString);
 
-    // Validar antigüedad (24 horas)
-    const maxAge = 24 * 60 * 60 * 1000; // 24 horas
+    // Validar antigüedad (7 días en producción, 24 horas en desarrollo)
+    const maxAge = import.meta.env.PROD ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
     if (Date.now() - timestamp > maxAge) {
       console.warn('Stored data is too old');
       return null;

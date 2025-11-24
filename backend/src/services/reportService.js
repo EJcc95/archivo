@@ -8,20 +8,28 @@ class ReportService {
     const totalAreas = await Area.count();
     const totalUsuarios = await Usuario.count({ where: { estado: true } });
 
-    // Obtener documentos por estado
-    const documentsByState = await Documento.findAll({
-      attributes: [
-        [sequelize.col('EstadoDocumento.nombre_estado'), 'estado'],
-        [sequelize.fn('COUNT', sequelize.col('Documento.id_documento')), 'count']
-      ],
-      include: [{
-        model: EstadoDocumento,
-        attributes: []
-      }],
-      where: { eliminado: false },
-      group: ['EstadoDocumento.id_estado', 'EstadoDocumento.nombre_estado'],
-      raw: true
-    });
+    // Obtener documentos por estado usando raw SQL
+    let documentsByState = [];
+    try {
+      const result = await sequelize.query(`
+        SELECT 
+          ed.nombre_estado as nombre,
+          CAST(COUNT(d.id_documento) AS UNSIGNED) as value
+        FROM documentos d
+        INNER JOIN estados_documento ed ON d.id_estado = ed.id_estado
+        WHERE d.eliminado = 0
+        GROUP BY ed.id_estado, ed.nombre_estado
+        ORDER BY ed.nombre_estado ASC
+      `, { type: sequelize.QueryTypes.SELECT });
+      
+      documentsByState = (result || []).map(row => ({
+        nombre: row.nombre || 'Sin estado',
+        value: parseInt(row.value) || 0
+      }));
+    } catch (error) {
+      console.error('Error in getDashboardStats documentsByState:', error.message);
+      documentsByState = [];
+    }
 
     return {
       totalDocumentos,
@@ -33,52 +41,72 @@ class ReportService {
   }
 
   async getDocumentosByArea() {
-    return await Documento.findAll({
-      attributes: [
-        [sequelize.col('AreaOrigen.nombre_area'), 'area'],
-        [sequelize.fn('COUNT', sequelize.col('Documento.id_documento')), 'cantidad']
-      ],
-      include: [{
-        model: Area,
-        as: 'areaOrigen',
-        attributes: []
-      }],
-      where: { eliminado: false },
-      group: ['AreaOrigen.id_area', 'AreaOrigen.nombre_area'],
-      raw: true
-    });
+    try {
+      const result = await sequelize.query(`
+        SELECT 
+          a.nombre_area as name,
+          CAST(COUNT(d.id_documento) AS UNSIGNED) as value
+        FROM documentos d
+        INNER JOIN areas a ON d.id_area_origen = a.id_area
+        WHERE d.eliminado = 0
+        GROUP BY a.id_area, a.nombre_area
+        ORDER BY a.nombre_area ASC
+      `, { type: sequelize.QueryTypes.SELECT });
+      
+      return (result || []).map(row => ({
+        name: row.name || 'Sin área',
+        value: parseInt(row.value) || 0
+      }));
+    } catch (error) {
+      console.error('Error in getDocumentosByArea:', error.message);
+      throw new Error('No se pudo obtener documentos por área: ' + error.message);
+    }
   }
 
   async getDocumentosByTipo() {
-    return await Documento.findAll({
-      attributes: [
-        [sequelize.col('TipoDocumento.nombre_tipo'), 'tipo'],
-        [sequelize.fn('COUNT', sequelize.col('Documento.id_documento')), 'cantidad']
-      ],
-      include: [{
-        model: TipoDocumento,
-        attributes: []
-      }],
-      where: { eliminado: false },
-      group: ['TipoDocumento.id_tipo_documento', 'TipoDocumento.nombre_tipo'],
-      raw: true
-    });
+    try {
+      const result = await sequelize.query(`
+        SELECT 
+          td.nombre_tipo as name,
+          CAST(COUNT(d.id_documento) AS UNSIGNED) as value
+        FROM documentos d
+        INNER JOIN tipos_documento td ON d.id_tipo_documento = td.id_tipo_documento
+        WHERE d.eliminado = 0
+        GROUP BY td.id_tipo_documento, td.nombre_tipo
+        ORDER BY td.nombre_tipo ASC
+      `, { type: sequelize.QueryTypes.SELECT });
+      
+      return (result || []).map(row => ({
+        name: row.name || 'Sin tipo',
+        value: parseInt(row.value) || 0
+      }));
+    } catch (error) {
+      console.error('Error in getDocumentosByTipo:', error.message);
+      throw new Error('No se pudo obtener documentos por tipo: ' + error.message);
+    }
   }
 
   async getDocumentosByEstado() {
-    return await Documento.findAll({
-      attributes: [
-        [sequelize.col('EstadoDocumento.nombre_estado'), 'estado'],
-        [sequelize.fn('COUNT', sequelize.col('Documento.id_documento')), 'cantidad']
-      ],
-      include: [{
-        model: EstadoDocumento,
-        attributes: []
-      }],
-      where: { eliminado: false },
-      group: ['EstadoDocumento.id_estado', 'EstadoDocumento.nombre_estado'],
-      raw: true
-    });
+    try {
+      const result = await sequelize.query(`
+        SELECT 
+          ed.nombre_estado as name,
+          CAST(COUNT(d.id_documento) AS UNSIGNED) as value
+        FROM documentos d
+        INNER JOIN estados_documento ed ON d.id_estado = ed.id_estado
+        WHERE d.eliminado = 0
+        GROUP BY ed.id_estado, ed.nombre_estado
+        ORDER BY ed.nombre_estado ASC
+      `, { type: sequelize.QueryTypes.SELECT });
+      
+      return (result || []).map(row => ({
+        name: row.name || 'Sin estado',
+        value: parseInt(row.value) || 0
+      }));
+    } catch (error) {
+      console.error('Error in getDocumentosByEstado:', error.message);
+      throw new Error('No se pudo obtener documentos por estado: ' + error.message);
+    }
   }
 
   async getUserActivity(options = {}) {

@@ -37,8 +37,8 @@ const DashboardPage = () => {
 
   // Preparar datos para el gráfico de estados
   const pieData = dashboardStats?.documentsByState?.map((item: any) => ({
-    name: item.estado,
-    value: item.count
+    name: item.nombre,
+    value: item.value
   })) || [];
 
   // Obtener hora del día para saludo personalizado

@@ -5,7 +5,7 @@ export interface DashboardStats {
   total_usuarios: number;
   total_areas: number;
   total_archivadores: number;
-  documentsByState?: Array<{ estado: string; count: number }>;
+  documentsByState?: Array<{ nombre: string; value: number }>;
 }
 
 export interface ChartData {
@@ -30,25 +30,25 @@ export const reportService = {
   getDocumentosByArea: async (): Promise<ChartData[]> => {
     const { data } = await api.get('/reports/by-area');
     return data.data.map((item: any) => ({
-      name: item.area,
-      value: parseInt(item.cantidad),
-      color: item.color // Note: Backend doesn't seem to return color, might be undefined
+      name: item.name,
+      value: parseInt(item.value),
+      color: item.color
     }));
   },
 
   getDocumentosByTipo: async (): Promise<ChartData[]> => {
     const { data } = await api.get('/reports/by-tipo');
     return data.data.map((item: any) => ({
-      name: item.tipo,
-      value: parseInt(item.cantidad)
+      name: item.name,
+      value: parseInt(item.value)
     }));
   },
 
   getDocumentosByEstado: async (): Promise<ChartData[]> => {
     const { data } = await api.get('/reports/by-estado');
     return data.data.map((item: any) => ({
-      name: item.estado,
-      value: parseInt(item.cantidad)
+      name: item.name,
+      value: parseInt(item.value)
     }));
   },
 
