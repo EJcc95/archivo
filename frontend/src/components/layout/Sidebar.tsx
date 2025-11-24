@@ -32,6 +32,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
   permission?: string;
+  excludePaths?: string[];
 }
 
 interface NavCategory {
@@ -49,12 +50,19 @@ const navigation: NavCategory[] = [
   {
     title: 'Documentos',
     items: [
-      { name: 'Documentos', href: '/documentos', icon: IconFileText, permission: 'docs_read' },
+      { 
+        name: 'Documentos', 
+        href: '/documentos', 
+        icon: IconFileText, 
+        permission: 'docs_read',
+        excludePaths: ['/documentos/papelera', '/documentos/huerfanos']
+      },
       { name: 'Tipos Documento', href: '/tipos-documento', icon: IconClipboardText, permission: 'system_admin' },
       { name: 'Papelera', href: '/documentos/papelera', icon: IconTrash, permission: 'docs_delete' },
       { name: 'Sin Archivador', href: '/documentos/huerfanos', icon: IconAlertCircle, permission: 'docs_edit' },
     ],
   },
+// ... (rest of navigation) ...
   {
     title: 'Usuarios y Roles',
     items: [
@@ -148,8 +156,9 @@ const Sidebar = () => {
               )}
               <ul className="space-y-1">
                 {category.items.filter(canAccess).map((item) => {
-                  const isActive = location.pathname === item.href ||
-                    (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+                  const isExcluded = item.excludePaths?.some(path => location.pathname.startsWith(path));
+                  const isActive = !isExcluded && (location.pathname === item.href ||
+                    (item.href !== '/dashboard' && location.pathname.startsWith(item.href)));
 
                   return (
                     <li key={item.name}>

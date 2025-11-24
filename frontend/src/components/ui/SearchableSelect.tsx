@@ -37,8 +37,10 @@ const SearchableSelect = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Filtrar opciones basado en búsqueda
   const filteredOptions = options.filter((option) => {
@@ -72,7 +74,9 @@ const SearchableSelect = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(event.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -210,6 +214,7 @@ const SearchableSelect = ({
       {/* Dropdown con position fixed */}
       {isOpen && (
         <div 
+          ref={dropdownRef}
           className="fixed z-[9999] bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[min(calc(100vh-200px),400px)]"
           style={{
             top: `${dropdownPosition.top + 4}px`,
@@ -306,4 +311,5 @@ const SearchableSelect = ({
     </>
   );
 };
+
 export default SearchableSelect;

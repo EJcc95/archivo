@@ -33,7 +33,8 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Si el error es 401 (No autorizado) y no es un reintento
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Excluir la ruta de login para evitar bucles o recargas innecesarias
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/login')) {
       originalRequest._retry = true;
 
       try {

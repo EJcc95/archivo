@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconTransfer, IconPlus, IconEye, IconEdit, IconTrash, IconSearch } from '@tabler/icons-react';
 import { prestamoService, type Prestamo } from '@/services/prestamoService';
-import { PageContainer, PageHeader, Pagination, Badge, DataTable, ConfirmModal } from '@/components/ui';
+import { PageContainer, PageHeader, Pagination, Badge, DataTable, ConfirmModal, SearchableSelect } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { useToast } from '@/components/ui/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -218,19 +218,22 @@ const PrestamosPage = () => {
               className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
-          <select
-            value={filterEstado}
-            onChange={(e) => {
-              setFilterEstado(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent w-full lg:w-64"
-          >
-            <option value="">Todos los estados</option>
-            <option value="Activo">Activos</option>
-            <option value="Devuelto">Devueltos</option>
-            <option value="Vencido">Vencidos</option>
-          </select>
+          <div className="w-full lg:w-64">
+            <SearchableSelect
+              options={[
+                { value: "", label: "Todos los estados" },
+                { value: "Activo", label: "Activos" },
+                { value: "Devuelto", label: "Devueltos" },
+                { value: "Vencido", label: "Vencidos" },
+              ]}
+              value={filterEstado}
+              onChange={(value) => {
+                setFilterEstado(String(value));
+                setCurrentPage(1);
+              }}
+              placeholder="Filtrar por estado"
+            />
+          </div>
         </div>
 
         {/* DataTable */}
