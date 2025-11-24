@@ -89,7 +89,7 @@ const DashboardPage = () => {
   return (
     <PageContainer>
       {/* Header Minimalista Mejorado */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#032dff] to-[#001b9e] rounded-2xl mx-6 lg:mx-8 mt-6 lg:mt-8 shadow-lg">
+      <div className="relative overflow-hidden bg-linear-to-br from-[#032dff] to-[#001b9e] rounded-2xl mx-6 lg:mx-8 mt-6 lg:mt-8 shadow-lg">
         {/* Patrón de fondo sutil */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnptMCAyNGMzLjMxIDAgNi0yLjY5IDYtNnMtMi42OS02LTYtNi02IDIuNjktNiA2IDIuNjkgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
 

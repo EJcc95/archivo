@@ -69,7 +69,6 @@ const DocumentoEditarPage = () => {
   const archivadorOptions = archivadores
     .filter((arch: any) => 
       (!formData.id_area_origen || arch.id_area_propietaria === Number(formData.id_area_origen)) &&
-      (!formData.id_tipo_documento || arch.id_tipo_documento_contenido === Number(formData.id_tipo_documento)) &&
       !arch.eliminado
     )
     .map((arch: any) => ({
@@ -303,7 +302,19 @@ const DocumentoEditarPage = () => {
                         <SearchableSelect
                           options={archivadorOptions}
                           value={formData.id_archivador}
-                          onChange={(value) => setFormData((prev) => ({ ...prev, id_archivador: Number(value) }))}
+                          onChange={(value) => {
+                            const numValue = Number(value);
+                            // Obtener el archivador seleccionado
+                            const selectedArchivador = archivadores.find((arch: any) => arch.id_archivador === numValue);
+                            // Si tiene tipo de documento, asignarlo automáticamente
+                            const tipoDocId = selectedArchivador?.id_tipo_documento_contenido || 1;
+                            
+                            setFormData((prev) => ({ 
+                              ...prev, 
+                              id_archivador: numValue,
+                              id_tipo_documento: tipoDocId
+                            }));
+                          }}
                           placeholder="Seleccione archivador"
                           emptyMessage={formData.id_area_origen ? "No hay archivadores disponibles" : "Seleccione primero un área"}
                         />
