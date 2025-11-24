@@ -262,7 +262,7 @@ const DocumentoDetallePage = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <IconFileDescription size={20} className="text-gray-600" />
+                    <IconFileDescription size={36} className="text-gray-600" />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Documento Digital</h3>
                       <p className="text-xs text-gray-500 mt-0.5">

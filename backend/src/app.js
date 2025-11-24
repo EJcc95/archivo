@@ -15,7 +15,7 @@ app.use(helmet({
         "'self'",
         "http://localhost:5173",
         "http://localhost:5174",
-        "https://taller.vinedosantisimacruz.com"
+        "https://archivo.muninuevoimperial.gob.pe",
       ],
     },
   },
@@ -26,8 +26,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://taller.vinedosantisimacruz.com',
-  'https://api.vinedosantisimacruz.com'
+  'https://archivo.muninuevoimperial.gob.pe',
+  'https://api.muninuevoimperial.gob.pe'
 ];
 
 // Agregar orígenes desde variable de entorno si existen
@@ -63,7 +63,7 @@ app.use(express.urlencoded({ extended: true })); // Parseo de URL-encoded
 const routes = require('./routes');
 
 // Ruta base de prueba
-app.get('/', (req, res) => {
+app.get('/info', (req, res) => {
   res.json({
     message: 'Bienvenido a la API del Archivo Electrónico Municipal - AEM',
     version: '1.0.0',

@@ -9,6 +9,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/auth';
 import { AppRouter } from '@/routes/AppRouter';
 import { SidebarProvider } from '@/context/SidebarContext';
+import { InactivityWarningModal } from '@/components/ui';
+import { useInactivityLogout } from '@/hooks';
 
 // Configuración de React Query
 const queryClient = new QueryClient({
@@ -21,37 +23,53 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppContent() {
+  const { showWarning, timeRemaining, extendSession, performLogout } = useInactivityLogout();
+
+  return (
+    <>
+      <AppRouter />
+      <InactivityWarningModal
+        isOpen={showWarning}
+        timeRemaining={timeRemaining}
+        onExtend={extendSession}
+        onLogout={performLogout}
+      />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
           <SidebarProvider>
-            <AppRouter />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                  padding: '16px',
-                  borderRadius: '8px',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#10b981',
-                    secondary: '#fff',
-                  },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
-                  },
-                },
-              }}
-            />
+            <AppContent />
           </SidebarProvider>
         </AuthProvider>
       </BrowserRouter>

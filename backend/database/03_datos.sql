@@ -613,15 +613,15 @@ INSERT INTO `usuarios` (
 VALUES (
     1,
     1,
-    'erinzon',
+    'admin@mdni',
     '$2a$12$2l1BPhDAAlUyd9pk/d94Ze5pdXt37mlUkKuurI6atSxa7EIu5UyLG',
-    'Erinzon',
-    'Cuzcano',
-    'erinzon1995@gmail.com',
+    'Administrador',
+    'General AEM',
+    'admin @muninuevoimperial.gob.pe',
     1,
     15,
     1,
-    '2025-10-03 17:52:47'
+    '2025-11-20 17:52:47'
   ),
   (
     2,
@@ -630,11 +630,11 @@ VALUES (
     '$2a$12$Cr5qW0Su0LVtYndO0GwX3eyBTlEjHca4obv/eXwlNgA9TDhT10lD.',
     'Genoveva',
     'De la Cruz',
-    'gdelacruz@muniejemplo.gob.pe',
+    'archivocentral @muninuevoimperial.gob.pe',
     2,
     5,
     1,
-    '2025-10-03 17:52:47'
+    '2025-11-20 17:52:47'
   );
 -- =====================================================
 -- 7. TABLA: tipos_documento (Independiente - Catálogo)
@@ -656,12 +656,28 @@ VALUES (1, 'Acuerdo de Consejo', NULL),
   (7, 'Oficio Emitido', NULL),
   (8, 'Oficio Recibido', NULL),
   (9, 'Ordenanza Municipal', NULL),
-  (10, 'Resolución de Administración y Finanzas', NULL),
+  (
+    10,
+    'Resolución de Administración y Finanzas',
+    NULL
+  ),
   (11, 'Resolucion de Alcaldia', NULL),
-  (12, 'Resolución de Gerencia de Administración Tributaria y Rentas', NULL),
-  (13, 'Resolución de Gerencia de Desarrollo Urbano y Rural', NULL),
+  (
+    12,
+    'Resolución de Gerencia de Administración Tributaria y Rentas',
+    NULL
+  ),
+  (
+    13,
+    'Resolución de Gerencia de Desarrollo Urbano y Rural',
+    NULL
+  ),
   (14, 'Resolución de Gerencia Municipal', NULL),
-  (15, 'Resolución de Gerencia de Servicios Públicos', NULL);
+  (
+    15,
+    'Resolución de Gerencia de Servicios Públicos',
+    NULL
+  );
 -- =====================================================
 -- 8. TABLA: estados_documento (Independiente - Catálogo)
 -- =====================================================
@@ -705,20 +721,20 @@ VALUES (
     'capacidad_maxima_archivador',
     '500',
     'Capacidad máxima de folios por archivador',
-    '2025-10-09 15:59:40'
+    '2025-11-20 15:59:40'
   ),
   (
     2,
     'dias_retencion_auditoria',
     '2555',
     'Días de retención de registros de auditoría',
-    '2025-10-03 17:53:17'
+    '2025-11-20 17:53:17'
   ),
   (
     3,
     'version_sistema',
     '1.0',
     'Versión actual del sistema',
-    '2025-10-03 17:53:17'
+    '2025-11-20 17:53:17'
   );
 COMMIT;

@@ -17,3 +17,4 @@ export { default as SearchableSelect } from './SearchableSelect';
 export { default as UploadProgressModal } from './UploadProgressModal';
 export { default as FormField } from './FormField';
 export { default as Badge } from './Badge';
+export { InactivityWarningModal } from './InactivityWarningModal';

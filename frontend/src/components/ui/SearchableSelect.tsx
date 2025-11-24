@@ -215,7 +215,7 @@ const SearchableSelect = ({
       {isOpen && (
         <div 
           ref={dropdownRef}
-          className="fixed z-[9999] bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[min(calc(100vh-200px),400px)]"
+          className="fixed z-9999 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col max-h-[min(calc(100vh-200px),400px)]"
           style={{
             top: `${dropdownPosition.top + 4}px`,
             left: `${dropdownPosition.left}px`,
