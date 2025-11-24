@@ -14,9 +14,10 @@ const PrestamosPage = () => {
   const { hasPermission } = usePermissions();
   const queryClient = useQueryClient();
   
-  // Map to existing database permissions
-  const canCreate = hasPermission('prestamos_request') || hasPermission('prestamos_admin');
+  // Permissions
+  const canCreate = hasPermission('prestamos_request');
   const canView = hasPermission('prestamos_request') || hasPermission('prestamos_approve') || hasPermission('prestamos_admin');
+  const canReturn = hasPermission('prestamos_approve') || hasPermission('prestamos_admin');
   const canEdit = hasPermission('prestamos_approve') || hasPermission('prestamos_admin');
   const canDelete = hasPermission('prestamos_admin');
 
@@ -25,6 +26,8 @@ const PrestamosPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletePrestamoId, setDeletePrestamoId] = useState<number | null>(null);
   const [deletePrestamoName, setDeletePrestamoName] = useState('');
+  const [returnPrestamoId, setReturnPrestamoId] = useState<number | null>(null);
+  const [returnObservations, setReturnObservations] = useState('');
   const itemsPerPage = 10;
 
   // Fetch prestamos
@@ -53,6 +56,27 @@ const PrestamosPage = () => {
       });
       setDeletePrestamoId(null);
       setDeletePrestamoName('');
+    },
+  });
+
+  // Return mutation
+  const returnMutation = useMutation({
+    mutationFn: (id: number) => prestamoService.returnPrestamo(id, { observaciones: returnObservations }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prestamos'] });
+      toast({
+        title: 'Éxito',
+        description: 'Préstamo marcado como devuelto correctamente',
+      });
+      setReturnPrestamoId(null);
+      setReturnObservations('');
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'No se pudo marcar el préstamo como devuelto',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -164,6 +188,15 @@ const PrestamosPage = () => {
               <IconEye size={18} />
             </button>
           )}
+          {canReturn && row.original.estado === 'Activo' && (
+            <button
+              onClick={() => setReturnPrestamoId(row.original.id_prestamo)}
+              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              title="Marcar como Devuelto"
+            >
+              <IconTransfer size={18} />
+            </button>
+          )}
           {canEdit && row.original.estado === 'Activo' && (
             <button
               onClick={() => navigate(`/prestamos/${row.original.id_prestamo}/editar`)}
@@ -271,6 +304,45 @@ const PrestamosPage = () => {
         confirmVariant="danger"
         isLoading={deleteMutation.isPending}
       />
+
+      {/* Return Loan Modal */}
+      {returnPrestamoId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">Marcar Préstamo como Devuelto</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Observaciones (opcional)
+              </label>
+              <textarea
+                value={returnObservations}
+                onChange={(e) => setReturnObservations(e.target.value)}
+                placeholder="Ingrese observaciones sobre la devolución..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => {
+                  setReturnPrestamoId(null);
+                  setReturnObservations('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => returnMutation.mutate(returnPrestamoId)}
+                disabled={returnMutation.isPending}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {returnMutation.isPending ? 'Procesando...' : 'Marcar Devuelto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 };

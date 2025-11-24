@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const configController = require('../controllers/configController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const checkRole = require('../middlewares/roleMiddleware');
+const checkPermission = require('../middlewares/permissionMiddleware');
 const configValidator = require('../validators/configValidator');
 
-// Rutas protegidas solo para ADMIN
+// Rutas protegidas - requieren permiso system_admin
 router.use(authMiddleware);
-router.use(checkRole(['Administrador']));
+router.use(checkPermission('system_admin'));
 
 // CRUD de configuraciones
 router.get('/', configController.getAllConfigs);

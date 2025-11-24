@@ -17,6 +17,20 @@ exports.createPrestamoValidator = [
   validateRequest
 ];
 
+exports.updatePrestamoValidator = [
+  body('fecha_devolucion_esperada')
+    .optional()
+    .isDate().withMessage('La fecha de devolución debe ser una fecha válida'),
+  body('motivo')
+    .optional()
+    .isString().withMessage('El motivo debe ser texto')
+    .isLength({ min: 5 }).withMessage('El motivo debe tener al menos 5 caracteres'),
+  body('observaciones')
+    .optional()
+    .isString().withMessage('Las observaciones deben ser texto'),
+  validateRequest
+];
+
 exports.returnPrestamoValidator = [
   body('observaciones')
     .optional()

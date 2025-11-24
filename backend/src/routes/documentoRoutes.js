@@ -3,40 +3,27 @@ const router = express.Router();
 const documentoController = require('../controllers/documentoController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { authenticateForView } = require('../middlewares/authMiddleware');
-const checkRole = require('../middlewares/roleMiddleware');
+const checkPermission = require('../middlewares/permissionMiddleware');
 const { createDocumentoValidator, updateDocumentoValidator } = require('../validators/documentoValidator');
 const { upload } = require('../config/upload');
 
-// Lectura - most routes use standard auth
-router.get('/', authMiddleware, documentoController.getAllDocumentos);
-router.get('/:id/download', authMiddleware, documentoController.downloadDocumento);
-router.get('/:id/view', authenticateForView, documentoController.viewDocumento); // Special auth for iframe
-router.get('/:id', authMiddleware, documentoController.getDocumentoById);
+// Lectura - requieren permiso docs_read
+router.get('/', authMiddleware, checkPermission('docs_read'), documentoController.getAllDocumentos);
+router.get('/:id/download', authMiddleware, checkPermission('docs_read'), documentoController.downloadDocumento);
+router.get('/:id/view', authenticateForView, checkPermission('docs_read'), documentoController.viewDocumento);
+router.get('/:id', authMiddleware, checkPermission('docs_read'), documentoController.getDocumentoById);
 
-// Escritura (Admin o usuarios con permisos, por ahora restringimos creación a Admin/User según lógica de negocio)
-// Asumimos que cualquier usuario autenticado puede registrar documentos, pero solo Admin puede borrar físicamente.
-router.post('/', authMiddleware, upload.single('archivo'), createDocumentoValidator, documentoController.createDocumento);
-router.put('/:id', authMiddleware, upload.single('archivo'), updateDocumentoValidator, documentoController.updateDocumento);
+// Escritura - requieren permiso docs_create
+router.post('/', authMiddleware, checkPermission('docs_create'), upload.single('archivo'), createDocumentoValidator, documentoController.createDocumento);
 
-// Papelera
-router.delete('/:id', authMiddleware, documentoController.softDeleteDocumento); // Mover a papelera
-router.put('/:id/restore', authMiddleware, documentoController.restoreDocumento); // Restaurar
+// Edición - requieren permiso docs_edit
+router.put('/:id', authMiddleware, checkPermission('docs_edit'), upload.single('archivo'), updateDocumentoValidator, documentoController.updateDocumento);
 
-// Eliminación física (Solo Admin)
-router.delete('/:id/destroy', authMiddleware, checkRole(['Administrador']), documentoController.hardDeleteDocumento);
+// Eliminación lógica - requieren permiso docs_delete
+router.delete('/:id', authMiddleware, checkPermission('docs_delete'), documentoController.softDeleteDocumento);
+router.put('/:id/restore', authMiddleware, checkPermission('docs_delete'), documentoController.restoreDocumento);
 
-module.exports = router;
-
-// Escritura (Admin o usuarios con permisos, por ahora restringimos creación a Admin/User según lógica de negocio)
-// Asumimos que cualquier usuario autenticado puede registrar documentos, pero solo Admin puede borrar físicamente.
-router.post('/', upload.single('archivo'), createDocumentoValidator, documentoController.createDocumento);
-router.put('/:id', upload.single('archivo'), updateDocumentoValidator, documentoController.updateDocumento);
-
-// Papelera
-router.delete('/:id', documentoController.softDeleteDocumento); // Mover a papelera
-router.put('/:id/restore', documentoController.restoreDocumento); // Restaurar
-
-// Eliminación física (Solo Admin)
-router.delete('/:id/destroy', checkRole(['Administrador']), documentoController.hardDeleteDocumento);
+// Eliminación física - requieren permiso docs_delete
+router.delete('/:id/destroy', authMiddleware, checkPermission('docs_delete'), documentoController.hardDeleteDocumento);
 
 module.exports = router;

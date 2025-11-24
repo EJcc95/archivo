@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const rolController = require('../controllers/rolController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const checkRole = require('../middlewares/roleMiddleware');
+const checkPermission = require('../middlewares/permissionMiddleware');
 const { createRolValidator, updateRolValidator } = require('../validators/rolValidator');
 
-// Todas las rutas protegidas y solo para ADMIN
+// Todas las rutas protegidas - requieren permiso users_admin
 router.use(authMiddleware);
-router.use(checkRole(['Administrador']));
+router.use(checkPermission('users_admin'));
 
 router.get('/permissions/all', rolController.getAllPermissions);
 router.post('/', createRolValidator, rolController.createRol);

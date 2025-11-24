@@ -408,110 +408,969 @@ archivo/
 
 ## 🧩 Módulos Principales
 
-### 1. **Módulo de Autenticación**
-- Login con email/usuario y contraseña
-- Recuperación de contraseña por email
-- JWT con refresh token
-- Cierre de sesión seguro
-- Control de sesiones múltiples
+### 1. **Módulo de Autenticación** 🔐
 
-**Archivos principales:**
-```
-Backend: authController.js, authService.js, authMiddleware.js
-Frontend: AuthProvider.tsx, LoginPage.tsx, ForgotPasswordPage.tsx
-```
+**Descripción:** Sistema de autenticación seguro con JWT, refresh tokens y recuperación de contraseña.
 
-### 2. **Módulo de Documentos**
-- CRUD completo de documentos
-- Clasificación automática
-- Carga de archivos digitales
-- Búsqueda y filtrado avanzado
-- Vista de papelera
-- Recuperación de huérfanos
+**Funcionalidades:**
+- ✅ Login con email o nombre de usuario
+- ✅ Generación de JWT (access token)
+- ✅ Refresh token con rotación automática
+- ✅ Recuperación de contraseña por email
+- ✅ Reset de contraseña con token temporal
+- ✅ Logout seguro y revocación de tokens
+- ✅ Auditoría de intentos de login
+- ✅ Control de intentos fallidos
 
-**Archivos principales:**
+**Endpoints Backend:**
 ```
-Backend: documentoController.js, documentoService.js, Documento.js
-Frontend: DocumentosPage.tsx, DocumentoNuevoPage.tsx, DocumentoDetallePage.tsx
+POST   /api/auth/login                    # Iniciar sesión
+POST   /api/auth/refresh                  # Renovar access token
+POST   /api/auth/logout                   # Cerrar sesión
+POST   /api/auth/request-password-reset   # Solicitar reset
+POST   /api/auth/reset-password           # Confirmar reset
 ```
 
-### 3. **Módulo de Usuarios**
-- Crear, editar y eliminar usuarios
-- Asignación de roles y áreas
-- Reseteo de contraseña por admin
-- Envío de credenciales por email
-- Control de estado (activo/inactivo)
+**Componentes Frontend:**
+- `LoginPage.tsx` - Formulario de login
+- `ForgotPasswordPage.tsx` - Solicitud de recuperación
+- `ResetPasswordPage.tsx` - Confirmación de reset
+- `AuthProvider.tsx` - Context de autenticación
+- `useAuth.ts` - Hook para acceso a datos de auth
 
-**Archivos principales:**
+**Archivos Principales:**
 ```
-Backend: userController.js, userService.js, Usuario.js
-Frontend: UsuariosPage.tsx, UsuarioNuevoPage.tsx, UsuarioEditarPage.tsx
-```
-
-### 4. **Módulo de Roles y Permisos**
-- Definición de roles personalizados
-- Asignación granular de permisos
-- Control de acceso basado en roles (RBAC)
-- Validación en backend y frontend
-
-**Archivos principales:**
-```
-Backend: rolController.js, roleService.js, Rol.js, RolPermiso.js
-Frontend: RolesPage.tsx, RolNuevoPage.tsx, RolPermisosPage.tsx
+Backend:  authController.js, authService.js, authMiddleware.js, 
+          PasswordResetToken.js, PasswordResetAttempt.js, RefreshToken.js
+Frontend: AuthProvider.tsx, LoginPage.tsx, ForgotPasswordPage.tsx, 
+          ResetPasswordPage.tsx, authService.ts
 ```
 
-### 5. **Módulo de Prestamos**
-- Solicitar préstamo de archivadores
-- Aprobar/rechazar solicitudes
-- Devolución con validación
-- Historial de préstamos
-- Notificaciones
+**Permisos Requeridos:**
+- `auth_login` - Iniciar/cerrar sesión
+- `auth_profile` - Ver y editar perfil
 
-**Archivos principales:**
+---
+
+### 2. **Módulo de Documentos** 📄
+
+**Descripción:** Gestión completa del ciclo de vida de documentos electrónicos con clasificación automática, versionado y búsqueda avanzada.
+
+**Funcionalidades:**
+- ✅ Crear documentos con clasificación automática
+- ✅ Generación automática de prenombre (Tipo nnnn-YYYY-Siglas)
+- ✅ Edición y actualización de metadatos
+- ✅ Carga de archivos digitales (PDF, Word, Excel, etc.)
+- ✅ Descarga de archivos adjuntos
+- ✅ Búsqueda por prenombre, nombre, descripción
+- ✅ Filtrado por: área, tipo, estado, archivador, rango de fechas
+- ✅ Eliminación lógica (soft delete)
+- ✅ Vista de papelera con recuperación
+- ✅ Identificación de documentos huérfanos
+- ✅ Cambio de estado (Registrado → En Proceso → Archivado → Prestado)
+- ✅ Historial de cambios y auditoría
+
+**Estados de Documentos:**
+1. **Registrado** - Documento acaba de ser creado
+2. **En Proceso** - Está siendo archivado
+3. **Archivado** - Archivado en el archivador correspondiente
+4. **Prestado** - Documento en préstamo temporal
+
+**Endpoints Backend:**
 ```
-Backend: prestamoController.js, prestamoService.js, PrestamoArchivador.js
-Frontend: PrestamosPage.tsx, PrestamoNuevoPage.tsx
+GET    /api/documentos                    # Listar documentos con filtros
+GET    /api/documentos/:id                # Obtener detalle
+POST   /api/documentos                    # Crear documento
+PUT    /api/documentos/:id                # Editar documento
+DELETE /api/documentos/:id                # Eliminar (soft delete)
+GET    /api/documentos/papelera           # Listar eliminados
+POST   /api/documentos/:id/restore        # Restaurar eliminado
+POST   /api/documentos/:id/upload         # Cargar archivo
+GET    /api/documentos/:id/download       # Descargar archivo
+POST   /api/documentos/huerfanos          # Identificar huérfanos
 ```
 
-### 6. **Módulo de Auditoría**
-- Registro de todas las acciones
-- Seguimiento de cambios en documentos
-- Historial de usuario
-- Filtros avanzados
+**Componentes Frontend:**
+- `DocumentosPage.tsx` - Listado principal con filtros
+- `DocumentoNuevoPage.tsx` - Crear nuevo documento
+- `DocumentoEditarPage.tsx` - Editar documento existente
+- `DocumentoDetallePage.tsx` - Ver detalles completos
+- `DataTable.tsx` - Tabla reutilizable
+- `SearchableSelect.tsx` - Selector de áreas/archivadores/tipos
+- `UploadProgressModal.tsx` - Progreso de carga
 
-**Archivos principales:**
+**Archivos Principales:**
 ```
-Backend: auditController.js, auditService.js, Auditoria.js
-Frontend: AuditoriaPage.tsx
-```
-
-### 7. **Módulo de Reportes**
-- Reportes por período
-- Filtros múltiples (usuario, área, tipo)
-- Exportación a formatos
-- Gráficas y análisis
-
-**Archivos principales:**
-```
-Backend: reportController.js, reportService.js
-Frontend: ReportesPage.tsx
+Backend:  documentoController.js, documentoService.js, Documento.js,
+          documentoValidator.js
+Frontend: DocumentoNuevoPage.tsx, DocumentoEditarPage.tsx,
+          DocumentoDetallePage.tsx, DocumentosPage.tsx,
+          documentoService.ts, documentoValidator.ts
 ```
 
-### 8. **Módulo de Configuración**
-- Gestión de áreas
-- Configuración de archivadores
-- Tipos de documentos
-- Parámetros del sistema
+**Permisos Requeridos:**
+- `docs_read` - Ver documentos
+- `docs_create` - Crear documentos
+- `docs_edit` - Editar documentos
+- `docs_delete` - Eliminar documentos
+- `docs_upload` - Cargar archivos
 
-**Archivos principales:**
+---
+
+### 3. **Módulo de Usuarios** 👥
+
+**Descripción:** Gestión completa de usuarios del sistema con roles, permisos y control de acceso.
+
+**Funcionalidades:**
+- ✅ Crear nuevos usuarios
+- ✅ Editar información de usuario (nombre, email, área)
+- ✅ Eliminar usuarios (soft delete)
+- ✅ Asignación de rol
+- ✅ Asignación de área de trabajo
+- ✅ Activar/desactivar usuarios
+- ✅ Envío automático de credenciales por email
+- ✅ Reset de contraseña por administrador
+- ✅ Vista de perfil personal
+- ✅ Cambio de contraseña personal
+- ✅ Historial de actividad del usuario
+- ✅ Búsqueda y filtrado
+- ✅ Validación de email único
+
+**Endpoints Backend:**
 ```
-Backend: configController.js, areaController.js, archivadorController.js
-Frontend: ConfiguracionPage.tsx, AreasPage.tsx, ArchivadoresPage.tsx
+GET    /api/users                         # Listar usuarios
+GET    /api/users/:id                     # Obtener usuario
+POST   /api/users                         # Crear usuario
+PUT    /api/users/:id                     # Editar usuario
+DELETE /api/users/:id                     # Eliminar usuario
+POST   /api/users/:id/reset-password      # Reset password (admin)
+GET    /api/users/profile                 # Mi perfil
+PUT    /api/users/profile                 # Editar mi perfil
+POST   /api/users/change-password         # Cambiar mi contraseña
+```
+
+**Componentes Frontend:**
+- `UsuariosPage.tsx` - Listado de usuarios
+- `UsuarioNuevoPage.tsx` - Crear nuevo usuario
+- `UsuarioEditarPage.tsx` - Editar usuario
+- `ProfilePage.tsx` - Ver/editar perfil personal
+- `DataTable.tsx` - Tabla de usuarios
+- `SearchableSelect.tsx` - Selector de roles/áreas
+
+**Archivos Principales:**
+```
+Backend:  userController.js, userService.js, Usuario.js,
+          userValidator.js
+Frontend: UsuariosPage.tsx, UsuarioNuevoPage.tsx,
+          UsuarioEditarPage.tsx, ProfilePage.tsx,
+          userService.ts, userValidator.ts
+```
+
+**Permisos Requeridos:**
+- `auth_profile` - Ver y editar perfil propio
+- `users_read` - Ver usuarios
+- `users_admin` - Crear, editar usuarios
+
+---
+
+### 4. **Módulo de Roles y Permisos** 🔑
+
+**Descripción:** Sistema de control de acceso basado en roles (RBAC) con permisos granulares.
+
+**Funcionalidades:**
+- ✅ Crear roles personalizados
+- ✅ Editar roles existentes
+- ✅ Eliminar roles (si no están asignados)
+- ✅ Asignación granular de permisos a roles
+- ✅ Visualización de permisos por rol
+- ✅ Validación de permisos en backend y frontend
+- ✅ Control de acceso a rutas y endpoints
+- ✅ 24 permisos predefinidos del sistema
+- ✅ Herencia de permisos (Administrador > Supervisor > Registrador > Consultor)
+
+**Roles Predefinidos:**
+1. **Administrador** - Acceso total al sistema
+2. **Registrador** - Crear, editar y buscar documentos
+3. **Consultor** - Solo lectura de documentos
+4. **Supervisor** - Gestión intermedia y supervisión
+
+**Permisos del Sistema:**
+- Autenticación: `auth_login`, `auth_profile`
+- Documentos: `docs_read`, `docs_create`, `docs_edit`, `docs_delete`, `docs_upload`, `docs_stats`
+- Áreas: `areas_read`, `areas_write`, `areas_admin`
+- Archivadores: `arch_read`, `arch_write`, `arch_transfer`, `arch_admin`
+- Tipos: `tipos_read`, `tipos_write`
+- Préstamos: `prestamos_request`, `prestamos_approve`, `prestamos_admin`
+- Usuarios: `users_read`, `users_admin`
+- Reportes: `reports_access`
+- Sistema: `system_admin`
+
+**Endpoints Backend:**
+```
+GET    /api/roles                         # Listar roles
+GET    /api/roles/:id                     # Obtener rol
+POST   /api/roles                         # Crear rol
+PUT    /api/roles/:id                     # Editar rol
+DELETE /api/roles/:id                     # Eliminar rol
+GET    /api/roles/:id/permisos            # Permisos del rol
+POST   /api/roles/:id/permisos            # Asignar permisos
+```
+
+**Componentes Frontend:**
+- `RolesPage.tsx` - Listado de roles
+- `RolNuevoPage.tsx` - Crear nuevo rol
+- `RolEditarPage.tsx` - Editar rol
+- `RolPermisosPage.tsx` - Gestionar permisos del rol
+
+**Archivos Principales:**
+```
+Backend:  rolController.js, roleService.js, Rol.js, RolPermiso.js,
+          Permiso.js, roleValidator.js
+Frontend: RolesPage.tsx, RolNuevoPage.tsx, RolEditarPage.tsx,
+          RolPermisosPage.tsx, roleService.ts, usePermissions.ts
+```
+
+**Permisos Requeridos:**
+- `users_admin` - Gestionar roles y permisos
+
+---
+
+### 5. **Módulo de Préstamos** 📦
+
+**Descripción:** Sistema de control de préstamos de archivadores con aprobación y devolución.
+
+**Funcionalidades:**
+- ✅ Solicitar préstamo de archivador
+- ✅ Listado de mis préstamos (usuario)
+- ✅ Listado de todas las solicitudes (admin)
+- ✅ Aprobar/rechazar solicitudes
+- ✅ Devolución de archivador
+- ✅ Validación de capacidad
+- ✅ Historial de préstamos
+- ✅ Notificación por email
+- ✅ Auditoría de préstamos
+- ✅ Estados: Pendiente → Aprobado → Devuelto/Rechazado
+
+**Estados de Préstamo:**
+1. **Pendiente** - Esperando aprobación
+2. **Aprobado** - Autorizado para prestar
+3. **Devuelto** - Archivador devuelto
+4. **Rechazado** - Solicitud denegada
+
+**Endpoints Backend:**
+```
+GET    /api/prestamos                     # Listar préstamos
+GET    /api/prestamos/:id                 # Obtener detalle
+POST   /api/prestamos                     # Solicitar préstamo
+PUT    /api/prestamos/:id                 # Actualizar solicitud
+POST   /api/prestamos/:id/aprobar         # Aprobar solicitud
+POST   /api/prestamos/:id/rechazar        # Rechazar solicitud
+POST   /api/prestamos/:id/devolver        # Devolver archivador
+```
+
+**Componentes Frontend:**
+- `PrestamosPage.tsx` - Listado de préstamos
+- `PrestamoNuevoPage.tsx` - Crear solicitud
+- `PrestamoEditarPage.tsx` - Editar solicitud
+- `PrestamoDetallePage.tsx` - Ver detalles
+
+**Archivos Principales:**
+```
+Backend:  prestamoController.js, prestamoService.js,
+          PrestamoArchivador.js, prestamoValidator.js
+Frontend: PrestamosPage.tsx, PrestamoNuevoPage.tsx,
+          PrestamoEditarPage.tsx, PrestamoDetallePage.tsx,
+          prestamoService.ts
+```
+
+**Permisos Requeridos:**
+- `prestamos_request` - Solicitar préstamos
+- `prestamos_approve` - Aprobar/rechazar
+- `prestamos_admin` - Gestión completa
+
+---
+
+### 6. **Módulo de Auditoría** 📊
+
+**Descripción:** Registro completo y búsqueda de todas las acciones realizadas en el sistema.
+
+**Funcionalidades:**
+- ✅ Registro automático de todas las acciones
+- ✅ Tracking de cambios en documentos
+- ✅ Historial de usuario (quién, qué, cuándo)
+- ✅ Búsqueda avanzada por usuario, tipo de acción, fecha
+- ✅ Filtrado por módulo (documentos, usuarios, etc.)
+- ✅ Exportación de auditoría
+- ✅ Información de IP y User Agent
+- ✅ Retención configurable de logs
+- ✅ Prevención de modificación de logs
+
+**Tipos de Acciones Auditadas:**
+- Autenticación (LOGIN, LOGOUT)
+- Documentos (CREATE, UPDATE, DELETE, RESTORE)
+- Usuarios (CREATE, UPDATE, DELETE, PASSWORD_RESET)
+- Préstamos (REQUEST, APPROVE, REJECT, RETURN)
+- Configuración (CONFIG_CHANGE)
+- Y más...
+
+**Endpoints Backend:**
+```
+GET    /api/audit                         # Listar auditoría
+GET    /api/audit/:id                     # Obtener detalle
+GET    /api/audit/user/:userId            # Auditoría de usuario
+GET    /api/audit/document/:docId         # Cambios del documento
+GET    /api/audit/export                  # Exportar auditoría
+```
+
+**Componentes Frontend:**
+- `AuditoriaPage.tsx` - Búsqueda y listado de auditoría
+- `DataTable.tsx` - Tabla de eventos
+- Filtros por fecha, usuario, tipo de acción
+
+**Archivos Principales:**
+```
+Backend:  auditController.js, auditService.js, Auditoria.js
+Frontend: AuditoriaPage.tsx, auditService.ts
+```
+
+**Permisos Requeridos:**
+- `system_admin` - Acceso a auditoría
+
+---
+
+### 7. **Módulo de Reportes** 📈
+
+**Descripción:** Análisis y visualización de datos del sistema con gráficas y exportaciones.
+
+**Funcionalidades:**
+- ✅ Dashboard con estadísticas principales
+- ✅ Gráficas interactivas (Pie, Bar, Line)
+- ✅ Documentos por área
+- ✅ Documentos por tipo
+- ✅ Documentos por estado
+- ✅ Actividad reciente de usuarios
+- ✅ Filtrado por período (día, mes, año)
+- ✅ Exportación a PDF/Excel
+- ✅ Generación de reportes personalizados
+- ✅ Datos en tiempo real
+
+**Gráficas Disponibles:**
+1. **Estado de Documentos** (Pie Chart)
+   - Registrado, En Proceso, Archivado, Prestado
+
+2. **Documentos por Área** (Bar Chart)
+   - Comparativa de documentos por cada área
+
+3. **Documentos por Tipo** (Horizontal Bar)
+   - Distribución según tipo de documento
+
+4. **Actividad de Usuarios** (Table)
+   - Últimas acciones de usuarios
+
+**Endpoints Backend:**
+```
+GET    /api/reports/dashboard             # Estadísticas principales
+GET    /api/reports/by-area               # Documentos por área
+GET    /api/reports/by-tipo               # Documentos por tipo
+GET    /api/reports/by-estado             # Documentos por estado
+GET    /api/reports/user-activity         # Actividad de usuarios
+GET    /api/reports/export                # Exportar reportes
+```
+
+**Componentes Frontend:**
+- `DashboardPage.tsx` - Dashboard principal
+- `ReportesPage.tsx` - Generador de reportes avanzados
+- Gráficas con Recharts
+- Exportación con html2canvas/pdfkit
+
+**Archivos Principales:**
+```
+Backend:  reportController.js, reportService.js
+Frontend: DashboardPage.tsx, ReportesPage.tsx, reportService.ts
+```
+
+**Permisos Requeridos:**
+- `reports_access` - Acceso a reportes
+
+---
+
+### 8. **Módulo de Configuración** ⚙️
+
+**Descripción:** Gestión centralizada de áreas, archivadores, tipos de documentos y parámetros del sistema.
+
+#### 8.1 **Sub-módulo: Áreas Organizacionales**
+
+**Funcionalidades:**
+- ✅ Crear nuevas áreas
+- ✅ Editar información de área (nombre, siglas)
+- ✅ Eliminar áreas (si no tienen documentos)
+- ✅ Activar/desactivar áreas
+- ✅ Asignación de usuarios a áreas
+- ✅ Visualización de archivadores por área
+- ✅ Visualización de documentos por área
+
+**Endpoints:**
+```
+GET    /api/areas                         # Listar áreas
+GET    /api/areas/:id                     # Obtener área
+POST   /api/areas                         # Crear área
+PUT    /api/areas/:id                     # Editar área
+DELETE /api/areas/:id                     # Eliminar área
+```
+
+#### 8.2 **Sub-módulo: Archivadores**
+
+**Funcionalidades:**
+- ✅ Crear archivadores en áreas
+- ✅ Definir capacidad máxima (folios)
+- ✅ Asignar tipo de documento que contiene
+- ✅ Visualizar ocupación actual
+- ✅ Identificar archivadores llenos
+- ✅ Transferir entre áreas
+- ✅ Historial de documentos almacenados
+- ✅ Estado: Disponible, Lleno, Archivado, En Préstamo
+
+**Endpoints:**
+```
+GET    /api/archivadores                  # Listar archivadores
+GET    /api/archivadores/:id              # Obtener detalle
+POST   /api/archivadores                  # Crear archivador
+PUT    /api/archivadores/:id              # Editar archivador
+DELETE /api/archivadores/:id              # Eliminar archivador
+POST   /api/archivadores/:id/transfer     # Transferir área
+GET    /api/archivadores/:id/documentos   # Documentos almacenados
+```
+
+#### 8.3 **Sub-módulo: Tipos de Documento**
+
+**Funcionalidades:**
+- ✅ Crear nuevos tipos de documento
+- ✅ Editar tipos existentes
+- ✅ Eliminar tipos (si no están en uso)
+- ✅ Descripción y referencias del tipo
+- ✅ Validación de formato de prenombre
+- ✅ 15 tipos predefinidos del sistema
+
+**Tipos Predefinidos:**
+- Acuerdo de Consejo
+- Carta
+- Decreto de Alcaldía
+- Informe Emitido/Recibido
+- Memorando
+- Oficio Emitido/Recibido
+- Ordenanza Municipal
+- Resoluciones (múltiples)
+
+**Endpoints:**
+```
+GET    /api/tipos-documento                # Listar tipos
+GET    /api/tipos-documento/:id            # Obtener tipo
+POST   /api/tipos-documento                # Crear tipo
+PUT    /api/tipos-documento/:id            # Editar tipo
+DELETE /api/tipos-documento/:id            # Eliminar tipo
+```
+
+#### 8.4 **Sub-módulo: Parámetros del Sistema**
+
+**Funcionalidades:**
+- ✅ Configurar capacidad máxima de archivador
+- ✅ Configurar retención de auditoría
+- ✅ Configurar parámetros de email
+- ✅ Configurar idioma del sistema
+- ✅ Ver versión del sistema
+- ✅ Configurar URLs de base de datos
+
+**Parámetros Disponibles:**
+- `capacidad_maxima_archivador` (default: 500 folios)
+- `dias_retencion_auditoria` (default: 2555 días / 7 años)
+- `version_sistema` (readonly)
+
+**Endpoints:**
+```
+GET    /api/config                        # Obtener parámetros
+PUT    /api/config/:key                   # Actualizar parámetro
+POST   /api/config/backup                 # Crear backup
+POST   /api/config/restore                # Restaurar backup
+```
+
+**Componentes Frontend:**
+- `ConfiguracionPage.tsx` - Parámetros del sistema
+- `AreasPage.tsx` - Gestión de áreas
+- `AreaNuevoPage.tsx` - Crear área
+- `AreaEditarPage.tsx` - Editar área
+- `ArchivadoresPage.tsx` - Gestión de archivadores
+- `ArchivadorNuevoPage.tsx` - Crear archivador
+- `ArchivadorEditarPage.tsx` - Editar archivador
+- `TiposDocumentoPage.tsx` - Gestión de tipos
+- `TipoDocumentoNuevoPage.tsx` - Crear tipo
+- `TipoDocumentoEditarPage.tsx` - Editar tipo
+
+**Archivos Principales:**
+```
+Backend:  configController.js, configService.js,
+          areaController.js, areaService.js, Area.js,
+          archivadorController.js, archivadorService.js, Archivador.js,
+          tipoDocumentoController.js, tipoDocumentoService.js,
+          TipoDocumento.js, ConfiguracionSistema.js
+Frontend: ConfiguracionPage.tsx, AreasPage.tsx, AreaNuevoPage.tsx,
+          AreaEditarPage.tsx, ArchivadoresPage.tsx,
+          ArchivadorNuevoPage.tsx, ArchivadorEditarPage.tsx,
+          TiposDocumentoPage.tsx, TipoDocumentoNuevoPage.tsx,
+          TipoDocumentoEditarPage.tsx, configService.ts,
+          areaService.ts, archivadorService.ts,
+          tipoDocumentoService.ts
+```
+
+**Permisos Requeridos:**
+- `areas_read` / `areas_write` / `areas_admin` - Áreas
+- `arch_read` / `arch_write` / `arch_admin` - Archivadores
+- `tipos_read` / `tipos_write` - Tipos de documento
+- `system_admin` - Configuración general
+
+---
+
+### 9. **Módulo de Control de Sesiones** ⏱️
+
+**Descripción:** Sistema avanzado de gestión de sesiones con timeout automático y sincronización multi-ventana.
+
+**Funcionalidades:**
+- ✅ Timeout automático después de 5 minutos de inactividad
+- ✅ Advertencia modal 1 minuto antes del cierre
+- ✅ Extender sesión al hacer click en "Continuar sesión"
+- ✅ Detección de actividad: mouse, teclado, scroll, touch
+- ✅ Sincronización entre múltiples pestañas/ventanas
+- ✅ BroadcastChannel para comunicación entre tabs
+- ✅ Logout automático en todas las ventanas
+- ✅ Encriptación segura de tokens en localStorage
+
+**Componentes Frontend:**
+- `InactivityWarningModal.tsx` - Modal de advertencia
+- `useInactivityLogout.ts` - Hook de detección de inactividad
+- `AuthProvider.tsx` - Integración en auth context
+
+**Archivos Principales:**
+```
+Frontend: InactivityWarningModal.tsx, useInactivityLogout.ts,
+          AuthProvider.tsx, encryption.ts
+```
+
+**Configuración:**
+```javascript
+// Tiempos en ms
+INACTIVITY_TIMEOUT = 5 * 60 * 1000      // 5 minutos
+WARNING_TIME = 1 * 60 * 1000            // Mostrar warning 1 min antes
 ```
 
 ---
 
-## 📌 Recomendaciones
+## 🏗️ Arquitectura del Sistema
+
+### Diagrama de Flujo de Autenticación
+
+```
+┌─────────────────┐
+│   Usuario       │
+└────────┬────────┘
+         │ Login (email/password)
+         ▼
+┌─────────────────────────────────┐
+│   Frontend: LoginPage.tsx        │
+│   - Validación básica            │
+│   - Encriptación de contraseña   │
+└────────┬────────────────────────┘
+         │ POST /api/auth/login
+         ▼
+┌─────────────────────────────────┐
+│   Backend: authController       │
+│   - Recibe credenciales         │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│   Backend: authService.js       │
+│   - Busca usuario (email/nombre)│
+│   - Verifica contraseña (bcrypt)│
+└────────┬────────────────────────┘
+         │
+      ┌──┴──┐
+      │     │
+   Válido  Inválido
+      │      │
+      ▼      ▼
+   ┌──┐   Retorna 401
+   │Sí│
+   └──┘
+      │
+      ▼
+┌──────────────────────────────┐
+│   Generar Tokens:            │
+│   - Access Token (JWT 24h)   │
+│   - Refresh Token (7 días)   │
+│   - Registrar en BD          │
+└──────────┬───────────────────┘
+           │ Response: {accessToken, refreshToken, user}
+           ▼
+┌──────────────────────────────┐
+│   Frontend: Almacenar tokens │
+│   - Encriptar con CryptoJS   │
+│   - Guardar en localStorage  │
+└──────────┬───────────────────┘
+           │
+           ▼
+┌──────────────────────────────┐
+│   Redirigir a Dashboard      │
+│   - Set BroadcastChannel     │
+│   - Iniciar detección        │
+│     de inactividad           │
+└──────────────────────────────┘
+```
+
+### Diagrama de Flujo de Crear Documento
+
+```
+┌─────────────────────────────┐
+│  Usuario: DocumentoNuevoPage│
+└────────┬────────────────────┘
+         │ Selecciona:
+         │ - Área origen
+         │ - Archivador
+         │ (auto-asigna tipo_documento)
+         ▼
+┌────────────────────────────────┐
+│  Frontend: Validación básica   │
+│  - Campos requeridos           │
+│  - Tipo de documento válido    │
+└────────┬───────────────────────┘
+         │ POST /api/documentos
+         │ + archivo + metadatos
+         ▼
+┌────────────────────────────────┐
+│  Backend: documentoController  │
+│  - Recibe datos                │
+└────────┬───────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  Backend: documentoService     │
+│  - Genera prenombre            │
+│    (TipoDco nnnn-YYYY-Sigla)   │
+│  - Valida archivador/tipo_doc  │
+│  - Valida capacidad archivador │
+└────────┬───────────────────────┘
+         │
+      ┌──┴──┐
+      │     │
+    Válido Inválido
+      │      │
+      ▼      ▼
+   ┌──┐   Retorna 400
+   │Sí│
+   └──┘
+      │
+      ▼
+┌────────────────────────────────┐
+│  Base de Datos:                │
+│  INSERT INTO documentos:       │
+│  - prenombre (generado)        │
+│  - nombre_documento            │
+│  - id_area_origen              │
+│  - id_archivador               │
+│  - id_tipo_documento           │
+│  - id_usuario_creador          │
+│  - fecha_creacion = NOW()      │
+└────────┬───────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  Carga de Archivo (Multer):    │
+│  - Valida tipo MIME            │
+│  - Copia a carpeta /uploads    │
+│  - Registra ruta en documento  │
+└────────┬───────────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│  Auditoría:                    │
+│  INSERT INTO auditoria:        │
+│  - id_usuario                  │
+│  - accion = 'CREATE'           │
+│  - descripcion                 │
+│  - fecha_accion = NOW()        │
+│  - ip_address                  │
+│  - user_agent                  │
+└────────┬───────────────────────┘
+         │ Response: {success: true, data: documento}
+         ▼
+┌────────────────────────────────┐
+│  Frontend: Actualizar listado  │
+│  - React Query revalidate      │
+│  - Toast de éxito              │
+│  - Redirigir a documento/lista │
+└────────────────────────────────┘
+```
+
+### Diagrama de Permisos
+
+```
+ADMINISTRADOR
+├── auth_login
+├── auth_profile
+├── docs_* (todos)
+├── areas_* (todos)
+├── arch_* (todos)
+├── tipos_* (todos)
+├── prestamos_* (todos)
+├── users_* (todos)
+├── reports_access
+└── system_admin
+
+SUPERVISOR
+├── auth_login
+├── auth_profile
+├── docs_read, create, edit, upload, stats
+├── areas_read, write
+├── arch_read, write, transfer
+├── tipos_read, write
+├── prestamos_request, approve
+├── users_read
+├── reports_access
+└── ❌ system_admin
+
+REGISTRADOR
+├── auth_login
+├── auth_profile
+├── docs_read, create, edit, upload
+├── areas_read
+├── arch_read, write
+├── tipos_read
+├── prestamos_request
+├── ❌ users_admin
+├── reports_access
+└── ❌ system_admin
+
+CONSULTOR
+├── auth_login
+├── auth_profile
+├── docs_read
+├── areas_read
+├── arch_read
+├── ❌ docs_create, edit, delete, upload
+├── ❌ prestamos_approve
+└── ❌ system_admin
+```
+
+### Diagrama de Estados de Documento
+
+```
+     ┌─────────────────────────────────┐
+     │  REGISTRADO                     │
+     │  Estado inicial del documento   │
+     └──────────┬──────────────────────┘
+                │
+     ┌──────────▼──────────┐
+     │  EN PROCESO         │
+     │  Siendo archivado   │
+     └──────────┬──────────┘
+                │
+     ┌──────────▼──────────┐
+     │  ARCHIVADO          │
+     │  En el archivador   │
+     ├──────────┬──────────┤
+     │          │          │
+   Leer      Préstamo      │
+     │          │          │
+     └──────────┼──────────┘
+                │
+     ┌──────────▼──────────┐
+     │  PRESTADO           │
+     │  Fuera del archivo  │
+     │  (Temporal)         │
+     └──────────┬──────────┘
+                │
+        Devolución
+                │
+     ┌──────────▼──────────┐
+     │  ARCHIVADO (nuevamente)
+     └─────────────────────┘
+```
+
+---
+
+## 📊 Estructura de Datos Principal
+
+### Tablas Principales
+
+```sql
+-- Usuarios y Autenticación
+usuarios
+  ├── id_usuario (PK)
+  ├── nombre_usuario (UNIQUE)
+  ├── email (UNIQUE)
+  ├── password (bcrypt)
+  ├── nombres, apellidos
+  ├── id_rol (FK)
+  ├── id_area (FK)
+  ├── estado (boolean)
+  └── fecha_creacion
+
+-- Documentos
+documentos
+  ├── id_documento (PK)
+  ├── prenombre (UNIQUE, auto-generado)
+  ├── nombre_documento
+  ├── descripcion
+  ├── id_area_origen (FK)
+  ├── id_archivador (FK)
+  ├── id_tipo_documento (FK)
+  ├── id_estado (FK)
+  ├── id_usuario_creador (FK)
+  ├── ruta_archivo
+  ├── fecha_creacion
+  ├── fecha_modificacion
+  ├── eliminado (soft delete)
+  └── fecha_eliminacion
+
+-- Configuración
+areas
+  ├── id_area (PK)
+  ├── nombre_area
+  ├── siglas
+  ├── id_organizacion (FK)
+  └── estado
+
+archivadores
+  ├── id_archivador (PK)
+  ├── codigo_archivador (UNIQUE)
+  ├── id_area_origen (FK)
+  ├── id_tipo_documento_contenido (FK)
+  ├── capacidad_maxima
+  ├── ocupacion_actual
+  ├── estado
+  └── fecha_creacion
+
+tipos_documento
+  ├── id_tipo_documento (PK)
+  ├── nombre_tipo
+  └── descripcion
+
+-- Seguridad
+roles
+  ├── id_rol (PK)
+  ├── nombre_rol
+  └── descripcion
+
+permisos
+  ├── id_permiso (PK)
+  ├── nombre_permiso
+  └── descripcion
+
+roles_permisos
+  ├── id_rol (FK)
+  ├── id_permiso (FK)
+  └── (PK: id_rol, id_permiso)
+
+-- Auditoría
+auditoria
+  ├── id_auditoria (PK)
+  ├── id_usuario (FK)
+  ├── accion (CREATE, UPDATE, DELETE, etc.)
+  ├── descripcion
+  ├── fecha_accion
+  ├── ip_address
+  ├── user_agent
+  └── detalles_cambio (JSON)
+
+-- Préstamos
+prestamos_archivadores
+  ├── id_prestamo (PK)
+  ├── id_archivador (FK)
+  ├── id_usuario_solicitante (FK)
+  ├── id_usuario_aprobador (FK)
+  ├── estado (Pendiente, Aprobado, Rechazado, Devuelto)
+  ├── motivo_solicitud
+  ├── fecha_solicitud
+  ├── fecha_aprobacion
+  ├── fecha_devolución
+  └── observaciones
+```
+
+---
+
+## 🔐 Flujo de Seguridad
+
+### Autenticación (JWT)
+
+```
+┌─────────────┐
+│  Credenciales│
+│  (email/pwd) │
+└──────┬──────┘
+       │
+       ▼
+   Validar
+   (bcrypt)
+       │
+   ┌───┴───┐
+   │       │
+  Válido  Inválido
+   │       └─► 401 Unauthorized
+   │
+   ▼
+Generar JWT
+   │
+   ├─► Access Token (24h)
+   │   ├─ id_usuario
+   │   ├─ email
+   │   ├─ rol
+   │   └─ permisos[]
+   │
+   └─► Refresh Token (7d)
+       └─ Guardar en BD
+
+Frontend:
+   │
+   ├─► Encriptar tokens (CryptoJS)
+   │   ├─ Validación SHA256
+   │   └─ Timestamp (max 7 días en prod)
+   │
+   └─► Almacenar en localStorage
+
+Usar Token:
+   │
+   ├─► Header: Authorization: Bearer {access_token}
+   │
+   └─► authMiddleware valida:
+       ├─ Token expirado?
+       ├─ Firma válida?
+       └─ Usuario existe?
+```
+
+### Autorización (RBAC)
+
+```
+┌──────────────┐
+│  Request API │
+└──────┬───────┘
+       │
+       ▼
+authMiddleware
+├─ Verifica JWT
+└─ Extrae usuario
+       │
+       ▼
+permissionMiddleware
+├─ Obtiene rol del usuario
+├─ Obtiene permisos del rol
+└─ Verifica permiso requerido
+       │
+   ┌───┴───┐
+   │       │
+  Tiene   No tiene
+   │       └─► 403 Forbidden
+   │
+   ▼
+Acceder a recurso
+```
 
 ### Seguridad
 

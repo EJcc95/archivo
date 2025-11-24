@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const areaController = require('../controllers/areaController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const checkRole = require('../middlewares/roleMiddleware');
+const checkPermission = require('../middlewares/permissionMiddleware');
 const { createAreaValidator, updateAreaValidator } = require('../validators/areaValidator');
 
 // Todas las rutas requieren autenticación
@@ -12,9 +12,9 @@ router.use(authMiddleware);
 router.get('/', areaController.getAllAreas);
 router.get('/:id', areaController.getAreaById);
 
-// Rutas protegidas para ADMIN (escritura)
-router.post('/', checkRole(['Administrador']), createAreaValidator, areaController.createArea);
-router.put('/:id', checkRole(['Administrador']), updateAreaValidator, areaController.updateArea);
-router.delete('/:id', checkRole(['Administrador']), areaController.deleteArea);
+// Rutas protegidas - requieren permisos específicos
+router.post('/', checkPermission('areas_write'), createAreaValidator, areaController.createArea);
+router.put('/:id', checkPermission('areas_write'), updateAreaValidator, areaController.updateArea);
+router.delete('/:id', checkPermission('areas_admin'), areaController.deleteArea);
 
 module.exports = router;
