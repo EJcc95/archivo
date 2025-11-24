@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconFileText, IconArrowLeft, IconDeviceFloppy, IconUpload, IconCheck, IconX } from '@tabler/icons-react';
-import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, CardFooter, SearchableSelect, UploadProgressModal } from '@/components/ui';
+import { PageContainer, PageHeader, FormField, Card, CardHeader, CardBody, SearchableSelect, UploadProgressModal } from '@/components/ui';
 import { documentoService, areaService, archivadorService } from '@/services';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -263,269 +263,274 @@ const DocumentoEditarPage = () => {
       />
 
       <div className="p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Archivo Actual */}
-            {documento.ruta_archivo_digital && (
-              <Card>
-                <CardBody>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <IconCheck size={24} className="text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Archivo actual: {documento.ruta_archivo_digital.split('/').pop()}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {updateFile ? 'Click para seleccionar un nuevo archivo PDF' : 'Documento tiene archivo PDF adjunto'}
-                        </p>
-                      </div>
+            {/* Main Grid - Left Content and Right Metadata */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Left Column - Main Content (2/3) */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Información Básica */}
+                <Card>
+                  <CardHeader
+                    title="Información Básica"
+                    subtitle="Datos principales del documento"
+                  />
+                  <CardBody>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Área Origen */}
+                      <FormField
+                        label="Área de Origen"
+                        required
+                        error={errors.id_area_origen}
+                      >
+                        <SearchableSelect
+                          options={areaOptions}
+                          value={formData.id_area_origen}
+                          onChange={(value) => {
+                            setFormData((prev) => ({ ...prev, id_area_origen: Number(value) }));
+                            if (errors.id_area_origen) {
+                              setErrors((prev) => ({ ...prev, id_area_origen: '' }));
+                            }
+                          }}
+                          placeholder="Seleccione área"
+                          error={!!errors.id_area_origen}
+                        />
+                      </FormField>
+
+                      {/* Archivador */}
+                      <FormField label="Archivador">
+                        <SearchableSelect
+                          options={archivadorOptions}
+                          value={formData.id_archivador}
+                          onChange={(value) => setFormData((prev) => ({ ...prev, id_archivador: Number(value) }))}
+                          placeholder="Seleccione archivador"
+                          emptyMessage={formData.id_area_origen ? "No hay archivadores disponibles" : "Seleccione primero un área"}
+                        />
+                      </FormField>
+
+                      {/* Nombre */}
+                      <FormField
+                        label="Nombre del Documento"
+                        required
+                        error={errors.nombre_documento}
+                        htmlFor="nombre_documento"
+                      >
+                        <input
+                          type="text"
+                          id="nombre_documento"
+                          name="nombre_documento"
+                          value={formData.nombre_documento}
+                          onChange={handleChange}
+                          maxLength={100}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        />
+                      </FormField>
+
+                      {/* Fecha */}
+                      <FormField
+                        label="Fecha del Documento"
+                        required
+                        htmlFor="fecha_documento"
+                      >
+                        <input
+                          type="date"
+                          id="fecha_documento"
+                          name="fecha_documento"
+                          value={formData.fecha_documento}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        />
+                      </FormField>
+
+                      {/* Número de Folios */}
+                      <FormField
+                        label="Número de Folios"
+                        required
+                        htmlFor="numero_folios"
+                      >
+                        <input
+                          type="text"
+                          id="numero_folios"
+                          name="numero_folios"
+                          value={formData.numero_folios}
+                          onChange={(e) => {
+                            const value = e.target.value.trim();
+                            if (value === '' || /^\d+$/.test(value)) {
+                              const numValue = value === '' ? 1 : parseInt(value, 10);
+                              setFormData((prev) => ({ ...prev, numero_folios: numValue }));
+                              if (errors.numero_folios) {
+                                setErrors((prev) => ({ ...prev, numero_folios: '' }));
+                              }
+                            }
+                          }}
+                          placeholder="Ej: 200"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        />
+                      </FormField>
+
+                      {/* Estado */}
+                      <FormField label="Estado del Documento">
+                        <select
+                          id="id_estado"
+                          name="id_estado"
+                          value={formData.id_estado}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
+                        >
+                          <option value="1">Registrado</option>
+                          <option value="2">En Proceso</option>
+                          <option value="3">Archivado</option>
+                          <option value="4">Prestado</option>
+                        </select>
+                      </FormField>
                     </div>
+
+                    {/* Asunto */}
+                    <FormField
+                      label="Asunto"
+                      required
+                      error={errors.asunto}
+                      htmlFor="asunto"
+                      className="mt-6"
+                    >
+                      <textarea
+                        id="asunto"
+                        name="asunto"
+                        value={formData.asunto}
+                        onChange={handleChange}
+                        rows={3}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
+                      />
+                    </FormField>
+                  </CardBody>
+                </Card>
+              </div>
+
+              {/* Right Column - Metadata (1/3) */}
+              <div className="space-y-6">
+                {/* Archivo Digital */}
+                <Card className="border-blue-100 shadow-lg overflow-hidden">
+                  <CardHeader
+                    title="Archivo Digital"
+                    subtitle={documento.ruta_archivo_digital ? "Actualizar documento PDF (Máx. 400MB)" : "Adjunte el documento PDF (Máx. 400MB)"}
+                  />
+                  <CardBody>
+                    {documento.ruta_archivo_digital && !updateFile && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                          <div className="shrink-0">
+                            <IconCheck className="h-6 w-6 text-green-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-green-900">
+                              Archivo actual
+                            </p>
+                            <p className="text-xs text-green-700 mt-0.5 truncate">
+                              {documento.ruta_archivo_digital.split('/').pop()}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUpdateFile(true);
+                            setNewFile(null);
+                          }}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-blue-300 text-[#032DFF] rounded-lg hover:bg-blue-50 font-medium transition-all duration-200 text-sm"
+                        >
+                          <IconUpload size={18} />
+                          Cambiar Archivo
+                        </button>
+                      </div>
+                    )}
+
+                    {(updateFile || !documento.ruta_archivo_digital) && (
+                      <label
+                        htmlFor="archivo"
+                        className="block cursor-pointer group"
+                      >
+                        <div className="relative flex flex-col items-center justify-center px-6 py-12 border-2 border-blue-200 border-dashed rounded-xl hover:border-[#032DFF] hover:bg-linear-to-b hover:from-blue-50 hover:to-blue-50/50 transition-all duration-300">
+                          {/* Background gradient on hover */}
+                          <div className="absolute inset-0 bg-linear-to-b from-[#032DFF]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
+                          
+                          {/* Content */}
+                          <div className="relative space-y-3 text-center">
+                            <div className="mx-auto h-20 w-20 bg-linear-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center group-hover:shadow-lg group-hover:shadow-blue-200 group-hover:scale-110 transition-all duration-300">
+                              <IconUpload className="h-9 w-9 text-[#032DFF] group-hover:scale-120 transition-transform" />
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm font-semibold text-gray-700 group-hover:text-[#032DFF] transition-colors">
+                                Subir archivo PDF
+                              </p>
+                              <p className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors mt-1">
+                                Arrastrar y soltar o hacer clic
+                              </p>
+                            </div>
+
+                            {newFile && (
+                              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-green-50 to-emerald-50 text-green-700 rounded-lg text-sm font-semibold border border-green-200 shadow-sm">
+                                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                <span className="truncate max-w-[180px]">{newFile.name}</span>
+                              </div>
+                            )}
+                            
+                            <p className="text-xs text-gray-400 pt-1">
+                              PDF • Máximo 400MB
+                            </p>
+                          </div>
+                        </div>
+                        <input
+                          id="archivo"
+                          name="archivo"
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleFileChange}
+                          className="sr-only"
+                        />
+                      </label>
+                    )}
+
+                    {updateFile && documento.ruta_archivo_digital && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUpdateFile(false);
+                          setNewFile(null);
+                        }}
+                        className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-2 border-2 border-gray-300 text-gray-600 rounded-lg hover:border-gray-400 hover:bg-gray-50 font-medium transition-all duration-200 text-sm"
+                      >
+                        <IconX size={18} />
+                        Cancelar cambio
+                      </button>
+                    )}
+                  </CardBody>
+                </Card>
+
+                {/* Actions Card */}
+                <Card className="border-blue-200 bg-linear-to-br from-white to-blue-50/30">
+                  <CardBody className="space-y-3">
+                    <button
+                      type="submit"
+                      disabled={updateMutation.isPending}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-[#032DFF] to-[#0225cc] text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 text-sm"
+                    >
+                      <IconDeviceFloppy size={18} />
+                      {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                    </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setUpdateFile(!updateFile);
-                        setNewFile(null);
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] transition-colors"
+                      onClick={() => navigate('/documentos')}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-gray-200 text-gray-600 rounded-lg hover:border-gray-300 hover:bg-gray-50 font-medium transition-all duration-200 text-sm"
                     >
-                      {updateFile ? <><IconX size={16} /> Cancelar</> : 'Cambiar archivo'}
+                      <IconArrowLeft size={18} />
+                      Cancelar
                     </button>
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-
-            {/* Upload Nuevo Archivo */}
-            {(updateFile || !documento.ruta_archivo_digital) && (
-              <Card>
-                <CardHeader
-                  title={documento.ruta_archivo_digital ? "Nuevo Archivo PDF" : "Archivo PDF"}
-                  subtitle="Seleccione un archivo PDF para adjuntar al documento"
-                />
-                <CardBody>
-                  <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#032DFF] transition-colors">
-                    <div className="space-y-1 text-center">
-                      <IconUpload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label
-                          htmlFor="archivo"
-                          className="relative cursor-pointer bg-white rounded-md font-medium text-[#032DFF] hover:text-[#0225cc]"
-                        >
-                          <span>Subir archivo</span>
-                          <input
-                            id="archivo"
-                            name="archivo"
-                            type="file"
-                            accept=".pdf"
-                            onChange={handleFileChange}
-                            className="sr-only"
-                          />
-                        </label>
-                        <p className="pl-1">o arrastrar y soltar</p>
-                      </div>
-                      <p className="text-xs text-gray-500">PDF hasta 400MB</p>
-                      {newFile && (
-                        <p className="text-sm text-green-600 font-medium mt-2">
-                          ✓ Nuevo archivo: {newFile.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-
-            {/* Información Básica */}
-            <Card>
-              <CardHeader
-                title="Información Básica"
-                subtitle="Datos principales del documento"
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Nombre */}
-                  <FormField
-                    label="Nombre del Documento"
-                    required
-                    error={errors.nombre_documento}
-                    htmlFor="nombre_documento"
-                  >
-                    <input
-                      type="text"
-                      id="nombre_documento"
-                      name="nombre_documento"
-                      value={formData.nombre_documento}
-                      onChange={handleChange}
-                      maxLength={100}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    />
-                  </FormField>
-
-                  {/* Fecha */}
-                  <FormField
-                    label="Fecha del Documento"
-                    required
-                    htmlFor="fecha_documento"
-                  >
-                    <input
-                      type="date"
-                      id="fecha_documento"
-                      name="fecha_documento"
-                      value={formData.fecha_documento}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    />
-                  </FormField>
-                </div>
-
-                {/* Asunto */}
-                <FormField
-                  label="Asunto"
-                  required
-                  error={errors.asunto}
-                  htmlFor="asunto"
-                  className="mt-6"
-                >
-                  <textarea
-                    id="asunto"
-                    name="asunto"
-                    value={formData.asunto}
-                    onChange={handleChange}
-                    rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
-                  />
-                </FormField>
-              </CardBody>
-            </Card>
-
-            {/* Áreas y Clasificación */}
-            <Card>
-              <CardHeader
-                title="Áreas y Clasificación"
-                subtitle="Información de procedencia, destino y estado"
-              />
-              <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Área Origen */}
-                  <FormField
-                    label="Área de Origen"
-                    required
-                    error={errors.id_area_origen}
-                  >
-                    <SearchableSelect
-                      options={areaOptions}
-                      value={formData.id_area_origen}
-                      onChange={(value) => {
-                        setFormData((prev) => ({ ...prev, id_area_origen: Number(value) }));
-                        if (errors.id_area_origen) {
-                          setErrors((prev) => ({ ...prev, id_area_origen: '' }));
-                        }
-                      }}
-                      placeholder="Seleccione área"
-                      error={!!errors.id_area_origen}
-                    />
-                  </FormField>
-
-                  {/* Área Destino */}
-                  <FormField label="Área de Destino">
-                    <SearchableSelect
-                      options={areaOptions}
-                      value={formData.id_area_destino}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, id_area_destino: Number(value) }))}
-                      placeholder="Seleccione área"
-                    />
-                  </FormField>
-
-                  {/* Número de Folios */}
-                  <FormField
-                    label="Número de Folios"
-                    required
-                    htmlFor="numero_folios"
-                  >
-                    <input
-                      type="number"
-                      id="numero_folios"
-                      name="numero_folios"
-                      value={formData.numero_folios}
-                      onChange={handleChange}
-                      min={1}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    />
-                  </FormField>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  {/* Archivador */}
-                  <FormField label="Archivador">
-                    <SearchableSelect
-                      options={archivadorOptions}
-                      value={formData.id_archivador}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, id_archivador: Number(value) }))}
-                      placeholder="Seleccione archivador"
-                      emptyMessage={formData.id_area_origen ? "No hay archivadores disponibles" : "Seleccione primero un área"}
-                    />
-                  </FormField>
-
-                  {/* Estado */}
-                  <FormField label="Estado del Documento">
-                    <select
-                      id="id_estado"
-                      name="id_estado"
-                      value={formData.id_estado}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
-                    >
-                      <option value="1">Registrado</option>
-                      <option value="2">En Proceso</option>
-                      <option value="3">Archivado</option>
-                      <option value="4">Prestado</option>
-                    </select>
-                  </FormField>
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* Información Adicional */}
-            <Card>
-              <CardHeader title="Información Adicional" />
-              <CardBody>
-                <FormField label="Observaciones">
-                  <textarea
-                    id="observaciones"
-                    name="observaciones"
-                    value={formData.observaciones}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Detalles adicionales del documento..."
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent resize-none"
-                  />
-                </FormField>
-              </CardBody>
-
-              <CardFooter>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={updateMutation.isPending}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#032DFF] text-white rounded-lg hover:bg-[#0225cc] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-                  >
-                    <IconDeviceFloppy size={18} />
-                    {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/documentos')}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-                  >
-                    <IconArrowLeft size={18} />
-                    Cancelar
-                  </button>
-                </div>
-              </CardFooter>
-            </Card>
+                  </CardBody>
+                </Card>
+              </div>
+            </div>
           </form>
         </div>
       </div>
