@@ -16,7 +16,7 @@ import {
   IconEye,
   IconRestore,
 } from '@tabler/icons-react';
-import { PageContainer, PageHeader, Pagination, SearchableSelect, Badge, DataTable, ConfirmModal } from '@/components/ui';
+import { PageContainer, PageHeader, SearchableSelect, Badge, DataTable, ConfirmModal } from '@/components/ui';
 import type { Column } from '@/components/ui/DataTable';
 import { documentoService, areaService } from '@/services';
 import { usePermissions } from '@/hooks';
@@ -31,12 +31,10 @@ const DocumentosPage = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [filterArea, setFilterArea] = useState<string | number>('');
   const [filterEstado, setFilterEstado] = useState<string | number>('');
   const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
   const [deleteDocName, setDeleteDocName] = useState('');
-  const itemsPerPage = 25;
   
   const canWrite = hasPermission('docs_create');
   const canEdit = hasPermission('docs_edit');
@@ -142,22 +140,6 @@ const DocumentosPage = () => {
     
     return matchesSearch && matchesDeleted && matchesArea && matchesEstado;
   });
-
-  // Paginate
-  const totalPages = Math.ceil(filteredDocumentos.length / itemsPerPage);
-  const paginatedDocumentos = filteredDocumentos.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  };
-
-  const handleFilterChange = () => {
-    setCurrentPage(1);
-  };
 
   // Badge helper
   const getEstadoBadge = (idEstado: number) => {
@@ -331,7 +313,7 @@ const DocumentosPage = () => {
               type="text"
               placeholder="Buscar por nombre o asunto..."
               value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
@@ -340,7 +322,7 @@ const DocumentosPage = () => {
             <SearchableSelect
               options={areaOptions}
               value={filterArea}
-              onChange={(val: string | number) => { setFilterArea(val); handleFilterChange(); }}
+              onChange={(val: string | number) => setFilterArea(val)}
               placeholder="Todas las áreas"
             />
           </div>
@@ -349,7 +331,7 @@ const DocumentosPage = () => {
             <SearchableSelect
               options={estadoOptions}
               value={filterEstado}
-              onChange={(val: string | number) => { setFilterEstado(val); handleFilterChange(); }}
+              onChange={(val: string | number) => setFilterEstado(val)}
               placeholder="Todos los estados"
             />
           </div>
@@ -359,7 +341,7 @@ const DocumentosPage = () => {
               <input
                 type="checkbox"
                 checked={showDeleted}
-                onChange={(e) => { setShowDeleted(e.target.checked); handleFilterChange(); }}
+                onChange={(e) => setShowDeleted(e.target.checked)}
                 className="w-4 h-4 text-[#032DFF] border-gray-300 rounded focus:ring-[#032DFF]"
               />
               Mostrar eliminados
@@ -370,22 +352,12 @@ const DocumentosPage = () => {
         {/* DataTable */}
         <DataTable
           columns={columns}
-          data={paginatedDocumentos}
+          data={filteredDocumentos}
           isLoading={isLoading}
           emptyMessage={searchTerm || filterArea || filterEstado ? 'No se encontraron documentos' : 'No hay documentos registrados'}
           rowClassName={(row) => row.eliminado ? 'opacity-50' : ''}
+          pageSize={10}
         />
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={filteredDocumentos.length}
-          />
-        )}
       </div>
 
       {/* Confirm Delete Modal */}
