@@ -37,12 +37,24 @@ export const documentoService = {
     const { data } = await api.put(`/documentos/${id}/restore`);
     return data.data;
   },
-  download: async (id: number, onDownloadProgress?: (progressEvent: any) => void) => {
+  // Optimized download - pass filename for better UX
+  download: async (id: number, filename: string) => {
     const response = await api.get(`/documentos/${id}/download`, {
-      responseType: 'blob',
-      onDownloadProgress
+      responseType: 'blob'
     });
-    return response.data;
+
+    // Create download link
+    const blob = response.data;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.pdf`;
+    link.click();
+
+    // Cleanup
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+
+    return blob;
   },
   getViewUrl: (id: number) => {
     const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';

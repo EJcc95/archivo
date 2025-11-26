@@ -72,16 +72,16 @@ class DocumentoController {
   }
 
   /**
-   * DESCARGA OPTIMIZADA CON STREAMING
-   * - No carga el archivo completo en memoria
-   * - Usa streams para archivos grandes
-   * - Maneja errores de archivo no encontrado
-   * - Incluye headers de cache
+   * DESCARGA OPTIMIZADA CON STREAMING + RANGE REQUESTS
+   * - Soporte completo para HTTP Range Requests (RFC 7233)
+   * - Permite descargas parciales y resumibles
+   * - Streaming eficiente para archivos grandes (hasta 400MB)
+   * - Buffer optimizado de 256KB para mejor throughput
    */
   async downloadDocumento(req, res, next) {
     try {
       const id = req.params.id;
-      
+
       // Query optimizada - solo campos necesarios
       const documento = await Documento.findOne({
         where: { id_documento: id, eliminado: false },
@@ -110,32 +110,81 @@ class DocumentoController {
       const stats = fs.statSync(filePath);
       const fileSize = stats.size;
 
-      // Headers optimizados
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Length', fileSize);
-      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(documento.nombre_documento)}.pdf"`);
-      
-      // Headers de cache (1 hora)
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.setHeader('ETag', `"${stats.mtime.getTime()}-${fileSize}"`);
+      // =======================
+      // SOPORTE RANGE REQUESTS
+      // =======================
+      const range = req.headers.range;
 
-      // Streaming del archivo (eficiente para archivos grandes)
-      const fileStream = fs.createReadStream(filePath, {
-        highWaterMark: 64 * 1024 // Buffer de 64KB (óptimo para PDFs)
-      });
+      if (range) {
+        // Parse del header Range: bytes=start-end
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunksize = (end - start) + 1;
 
-      fileStream.on('error', (error) => {
-        console.error('Error streaming file:', error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            success: false,
-            message: 'Error al transmitir el archivo'
-          });
+        // Validar rango
+        if (start >= fileSize || end >= fileSize) {
+          res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+          return res.end();
         }
-      });
 
-      // Pipe del stream al response
-      fileStream.pipe(res);
+        // Headers para respuesta parcial (HTTP 206)
+        res.status(206);
+        res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Length', chunksize);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(documento.nombre_documento)}.pdf"`);
+
+        // Headers de cache
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('ETag', `"${stats.mtime.getTime()}-${fileSize}"`);
+
+        // Stream del rango solicitado
+        const fileStream = fs.createReadStream(filePath, {
+          start,
+          end,
+          highWaterMark: 256 * 1024 // 256KB buffer para mejor rendimiento
+        });
+
+        fileStream.on('error', (error) => {
+          console.error('Error streaming range:', error);
+          if (!res.headersSent) {
+            res.status(500).end();
+          }
+        });
+
+        fileStream.pipe(res);
+
+      } else {
+        // Respuesta completa (HTTP 200)
+        res.status(200);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', fileSize);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(documento.nombre_documento)}.pdf"`);
+
+        // Headers de cache (1 hora)
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('ETag', `"${stats.mtime.getTime()}-${fileSize}"`);
+
+        // Streaming completo del archivo
+        const fileStream = fs.createReadStream(filePath, {
+          highWaterMark: 256 * 1024 // 256KB buffer
+        });
+
+        fileStream.on('error', (error) => {
+          console.error('Error streaming file:', error);
+          if (!res.headersSent) {
+            res.status(500).json({
+              success: false,
+              message: 'Error al transmitir el archivo'
+            });
+          }
+        });
+
+        fileStream.pipe(res);
+      }
 
     } catch (error) {
       next(error);
@@ -143,14 +192,16 @@ class DocumentoController {
   }
 
   /**
-   * VISUALIZACIÓN OPTIMIZADA EN NAVEGADOR
-   * - Similar al download pero con Content-Disposition: inline
-   * - Permite ver PDFs sin descargar
+   * VISUALIZACIÓN OPTIMIZADA CON RANGE REQUESTS
+   * - Soporte completo para streaming progresivo de PDFs
+   * - Los navegadores pueden solicitar páginas específicas
+   * - Content-Disposition: inline para visualización en navegador
+   * - Incrementa contador de consultas de forma asíncrona
    */
   async viewDocumento(req, res, next) {
     try {
       const id = req.params.id;
-      
+
       // Query optimizada
       const documento = await Documento.findOne({
         where: { id_documento: id, eliminado: false },
@@ -177,39 +228,86 @@ class DocumentoController {
       const stats = fs.statSync(filePath);
       const fileSize = stats.size;
 
-      // Headers para visualización
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Length', fileSize);
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(documento.nombre_documento)}.pdf"`);
-      
-      // Headers de cache (30 minutos para viewer)
-      res.setHeader('Cache-Control', 'public, max-age=1800');
-      res.setHeader('ETag', `"${stats.mtime.getTime()}-${fileSize}"`);
-
-      // Accept-Ranges para soporte de reproducción parcial
-      res.setHeader('Accept-Ranges', 'bytes');
-
       // Incrementar contador de consultas (async, no bloquea respuesta)
       Documento.increment('numero_consultas', {
         where: { id_documento: id }
       }).catch(err => console.error('Error incrementando consultas:', err));
 
-      // Streaming del archivo
-      const fileStream = fs.createReadStream(filePath, {
-        highWaterMark: 64 * 1024
-      });
+      // =======================
+      // SOPORTE RANGE REQUESTS
+      // =======================
+      const range = req.headers.range;
 
-      fileStream.on('error', (error) => {
-        console.error('Error streaming file:', error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            success: false,
-            message: 'Error al transmitir el archivo'
-          });
+      if (range) {
+        // Parse del header Range: bytes=start-end
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunksize = (end - start) + 1;
+
+        // Validar rango
+        if (start >= fileSize || end >= fileSize) {
+          res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+          return res.end();
         }
-      });
 
-      fileStream.pipe(res);
+        // Headers para respuesta parcial (HTTP 206)
+        res.status(206);
+        res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Length', chunksize);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(documento.nombre_documento)}.pdf"`);
+
+        // Headers de cache (30 minutos para viewer)
+        res.setHeader('Cache-Control', 'public, max-age=1800');
+        res.setHeader('ETag', `"${stats.mtime.getTime()}-${fileSize}"`);
+
+        // Stream del rango solicitado
+        const fileStream = fs.createReadStream(filePath, {
+          start,
+          end,
+          highWaterMark: 256 * 1024 // 256KB buffer para mejor rendimiento
+        });
+
+        fileStream.on('error', (error) => {
+          console.error('Error streaming range:', error);
+          if (!res.headersSent) {
+            res.status(500).end();
+          }
+        });
+
+        fileStream.pipe(res);
+
+      } else {
+        // Respuesta completa (HTTP 200)
+        res.status(200);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', fileSize);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(documento.nombre_documento)}.pdf"`);
+
+        // Headers de cache (30 minutos para viewer)
+        res.setHeader('Cache-Control', 'public, max-age=1800');
+        res.setHeader('ETag', `"${stats.mtime.getTime()}-${fileSize}"`);
+
+        // Streaming completo del archivo
+        const fileStream = fs.createReadStream(filePath, {
+          highWaterMark: 256 * 1024 // 256KB buffer
+        });
+
+        fileStream.on('error', (error) => {
+          console.error('Error streaming file:', error);
+          if (!res.headersSent) {
+            res.status(500).json({
+              success: false,
+              message: 'Error al transmitir el archivo'
+            });
+          }
+        });
+
+        fileStream.pipe(res);
+      }
 
     } catch (error) {
       next(error);

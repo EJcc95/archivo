@@ -275,21 +275,11 @@ const DocumentoDetallePage = () => {
                         onClick={async () => {
                           const toastId = toast.loading('Iniciando descarga...');
                           try {
-                            const blob = await documentoService.download(documento.id_documento, (progressEvent) => {
-                              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                              toast.loading(`Descargando: ${percentCompleted}%`, { id: toastId });
-                            });
-                            
+                            await documentoService.download(
+                              documento.id_documento,
+                              documento.nombre_documento
+                            );
                             toast.success('Descarga completada', { id: toastId });
-                            
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${documento.nombre_documento}.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
                           } catch (error) {
                             console.error('Error downloading:', error);
                             toast.error('Error al descargar el documento', { id: toastId });
