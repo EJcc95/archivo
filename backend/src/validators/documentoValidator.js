@@ -5,12 +5,10 @@ const createDocumentoValidator = [
   body('nombre_documento')
     .trim()
     .notEmpty().withMessage('El nombre del documento es requerido')
-    .isLength({ max: 100 }).withMessage('El nombre no puede exceder 100 caracteres')
-    .escape(),
+    .isLength({ max: 100 }).withMessage('El nombre no puede exceder 100 caracteres'),
   body('asunto')
     .trim()
-    .notEmpty().withMessage('El asunto es requerido')
-    .escape(),
+    .notEmpty().withMessage('El asunto es requerido'),
   body('fecha_documento')
     .notEmpty().withMessage('La fecha del documento es requerida')
     .isDate().withMessage('Debe ser una fecha válida'),
@@ -33,12 +31,10 @@ const updateDocumentoValidator = [
   body('nombre_documento')
     .optional()
     .trim()
-    .isLength({ max: 100 }).withMessage('El nombre no puede exceder 100 caracteres')
-    .escape(),
+    .isLength({ max: 100 }).withMessage('El nombre no puede exceder 100 caracteres'),
   body('asunto')
     .optional()
-    .trim()
-    .escape(),
+    .trim(),
   body('fecha_documento')
     .optional()
     .isDate().withMessage('Debe ser una fecha válida'),

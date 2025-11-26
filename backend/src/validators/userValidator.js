@@ -5,13 +5,11 @@ const updateProfileValidator = [
   body('nombres')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 75 }).withMessage('El nombre debe tener entre 2 y 75 caracteres')
-    .escape(),
+    .isLength({ min: 2, max: 75 }).withMessage('El nombre debe tener entre 2 y 75 caracteres'),
   body('apellidos')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 100 }).withMessage('El apellido debe tener entre 2 y 100 caracteres')
-    .escape(),
+    .isLength({ min: 2, max: 100 }).withMessage('El apellido debe tener entre 2 y 100 caracteres'),
   validate
 ];
 
@@ -48,13 +46,11 @@ const createUserValidator = [
   body('nombres')
     .trim()
     .notEmpty().withMessage('Los nombres son requeridos')
-    .isLength({ min: 2, max: 75 }).withMessage('Los nombres deben tener entre 2 y 75 caracteres')
-    .escape(),
+    .isLength({ min: 2, max: 75 }).withMessage('Los nombres deben tener entre 2 y 75 caracteres'),
   body('apellidos')
     .trim()
     .notEmpty().withMessage('Los apellidos son requeridos')
-    .isLength({ min: 2, max: 100 }).withMessage('Los apellidos deben tener entre 2 y 100 caracteres')
-    .escape(),
+    .isLength({ min: 2, max: 100 }).withMessage('Los apellidos deben tener entre 2 y 100 caracteres'),
   body('id_rol')
     .notEmpty().withMessage('El rol es requerido')
     .isInt().withMessage('El ID del rol debe ser un número entero'),
@@ -68,13 +64,11 @@ const updateUserValidator = [
   body('nombres')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 75 }).withMessage('Los nombres deben tener entre 2 y 75 caracteres')
-    .escape(),
+    .isLength({ min: 2, max: 75 }).withMessage('Los nombres deben tener entre 2 y 75 caracteres'),
   body('apellidos')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 100 }).withMessage('Los apellidos deben tener entre 2 y 100 caracteres')
-    .escape(),
+    .isLength({ min: 2, max: 100 }).withMessage('Los apellidos deben tener entre 2 y 100 caracteres'),
   body('id_rol')
     .optional()
     .isInt().withMessage('El ID del rol debe ser un número entero'),
