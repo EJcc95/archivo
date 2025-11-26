@@ -49,7 +49,7 @@ export default function DataTable<T>({
   // Reset to first page when data changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [data]);
+    }, [data.length]);
 
   // Sorting function
   const handleSort = (column: Column<T>) => {

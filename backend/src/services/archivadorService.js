@@ -138,6 +138,60 @@ class ArchivadorService {
 
     return true;
   }
+
+  /**
+   * Recalcula el estado de todos los archivadores basándose en la capacidad máxima actual
+   * Útil cuando se actualiza la configuración de capacidad
+   */
+  async recalcularEstadosArchivadores() {
+    const { ConfiguracionSistema } = require('../models');
+
+    // Obtener la capacidad máxima actual
+    const configCapacidad = await ConfiguracionSistema.findOne({
+      where: { clave: 'capacidad_maxima_archivador' }
+    });
+    const capacidadMaxima = configCapacidad ? parseInt(configCapacidad.valor) : 500;
+
+    // Obtener todos los archivadores no eliminados y que no están "En Custodia"
+    const archivadores = await Archivador.findAll({
+      where: {
+        eliminado: false,
+        estado: { [Op.ne]: 'En Custodia' } // No modificar archivadores en custodia
+      }
+    });
+
+    let actualizados = 0;
+    let reabiertos = 0;
+    let cerrados = 0;
+
+    for (const archivador of archivadores) {
+      const folios = archivador.total_folios || 0;
+      let nuevoEstado = null;
+
+      // Determinar el nuevo estado según la capacidad
+      if (folios >= capacidadMaxima && archivador.estado !== 'Cerrado') {
+        nuevoEstado = 'Cerrado';
+        cerrados++;
+      } else if (folios < capacidadMaxima && archivador.estado === 'Cerrado') {
+        nuevoEstado = 'Abierto';
+        reabiertos++;
+      }
+
+      // Actualizar si es necesario
+      if (nuevoEstado) {
+        await archivador.update({ estado: nuevoEstado });
+        actualizados++;
+      }
+    }
+
+    return {
+      capacidadActual: capacidadMaxima,
+      archivadoresRevisados: archivadores.length,
+      archivadoresActualizados: actualizados,
+      archivadoresReabiertos: reabiertos,
+      archivadoresCerrados: cerrados
+    };
+  }
 }
 
 module.exports = new ArchivadorService();

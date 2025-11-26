@@ -97,6 +97,27 @@ class ConfigController {
         });
       }
 
+      // Si se actualizó la capacidad del archivador, recalcular estados automáticamente
+      if (req.params.key === 'capacidad_maxima_archivador') {
+        try {
+          const archivadorService = require('../services/archivadorService');
+          const resultado = await archivadorService.recalcularEstadosArchivadores();
+
+          return res.json({
+            success: true,
+            message: 'Configuración actualizada exitosamente',
+            data: transformConfig(config),
+            recalculo: {
+              mensaje: `Se recalcularon ${resultado.archivadoresActualizados} archivadores automáticamente`,
+              detalles: resultado
+            }
+          });
+        } catch (error) {
+          console.error('Error al recalcular estados de archivadores:', error);
+          // Continuar aunque falle el recálculo
+        }
+      }
+
       res.json({
         success: true,
         message: 'Configuración actualizada exitosamente',

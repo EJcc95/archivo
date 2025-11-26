@@ -15,6 +15,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react';
 import { PageContainer, PageHeader, Badge, DataTable, ConfirmModal } from '@/components/ui';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import type { Column } from '@/components/ui/DataTable';
 import { areaService } from '@/services';
 import { usePermissions } from '@/hooks';
@@ -28,6 +29,7 @@ const AreasPage = () => {
   const queryClient = useQueryClient();
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [estadoFilter, setEstadoFilter] = useState<string | number | undefined>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteAreaId, setDeleteAreaId] = useState<number | null>(null);
   const [deleteAreaName, setDeleteAreaName] = useState('');
@@ -80,10 +82,18 @@ const AreasPage = () => {
   };
 
   // Filter areas
-  const filteredAreas = areas.filter((area: Area) =>
-    area.nombre_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    area.siglas?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAreas = areas.filter((area: Area) => {
+    const matchesSearch = area.nombre_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      area.siglas?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesEstado = 
+      estadoFilter === 'all' ? true :
+      estadoFilter === 'active' ? area.estado === true :
+      estadoFilter === 'inactive' ? area.estado === false :
+      true;
+    
+    return matchesSearch && matchesEstado;
+  });
 
   // Paginate filtered areas
   const paginatedAreas = filteredAreas.slice(
@@ -176,9 +186,10 @@ const AreasPage = () => {
       />
 
       <div className="p-6 space-y-6">
-        {/* Search Bar */}
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md w-full">
             <IconSearch
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               size={20}
@@ -191,6 +202,28 @@ const AreasPage = () => {
               className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032DFF] focus:border-transparent"
             />
           </div>
+
+          {/* Estado Filter */}
+          <div className="w-full sm:w-54">
+            <SearchableSelect
+              options={[
+                { value: 'all', label: 'Todos los estados' },
+                { value: 'active', label: 'Activos' },
+                { value: 'inactive', label: 'Inactivos' }
+              ]}
+              value={estadoFilter}
+              onChange={(value) => {
+                setEstadoFilter(value);
+                setCurrentPage(1);
+              }}
+              placeholder="Filtrar por estado"
+            />
+          </div>
+
+          {/* Results count */}
+          <div className="text-sm text-gray-500 whitespace-nowrap">
+            {filteredAreas.length} {filteredAreas.length === 1 ? 'área' : 'áreas'}
+          </div>
         </div>
 
         {/* DataTable */}
@@ -198,7 +231,7 @@ const AreasPage = () => {
           columns={columns}
           data={paginatedAreas}
           isLoading={isLoading}
-          emptyMessage={searchTerm ? 'No se encontraron áreas' : 'No hay áreas registradas'}
+          emptyMessage={searchTerm || estadoFilter !== 'all' ? 'No se encontraron áreas con los filtros seleccionados' : 'No hay áreas registradas'}
         />
       </div>
 

@@ -104,11 +104,14 @@ const ConfiguracionPage = () => {
       return;
     }
 
-    // Validar formato de la clave
-    const keyRegex = /^[A-Z0-9_]+$/;
-    if (!keyRegex.test(formData.key)) {
-      toast.error('La clave debe contener solo mayúsculas, números y guiones bajos');
-      return;
+    // Validar formato de la clave SOLO al crear nuevas configuraciones
+    // Al editar, la clave no se puede cambiar y puede estar en formato legacy (minúsculas)
+    if (!editingConfig) {
+      const keyRegex = /^[A-Z0-9_]+$/;
+      if (!keyRegex.test(formData.key)) {
+        toast.error('La clave debe contener solo mayúsculas, números y guiones bajos');
+        return;
+      }
     }
 
     try {
@@ -209,7 +212,7 @@ const ConfiguracionPage = () => {
           ) : undefined
         }
       />
-<div className="p-6 space-y-6">
+      <div className="p-6 space-y-6">
       <DataTable
         columns={columns}
         data={configs}
