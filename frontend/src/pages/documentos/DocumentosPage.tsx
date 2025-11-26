@@ -176,15 +176,16 @@ const DocumentosPage = () => {
     {
       header: 'Documento',
       id: 'documento',
+      width: 'auto',
       cell: ({ row }) => (
-        <div>
+        <div className="min-w-[200px]">
           <div 
             className="font-medium text-gray-900 hover:text-[#032DFF] cursor-pointer"
             onClick={() => navigate(`/documentos/${row.original.id_documento}`)}
           >
             {row.original.nombre_documento}
           </div>
-          <div className="text-sm text-gray-500 truncate max-w-md">{row.original.asunto}</div>
+          <div className="text-sm text-gray-500 truncate max-w-xs">{row.original.asunto}</div>
         </div>
       ),
     },
@@ -192,6 +193,7 @@ const DocumentosPage = () => {
       header: 'Área Origen',
       accessorKey: 'areaOrigen',
       sortable: true,
+      width: '180px',
       cell: ({ row }) => (
         <span className="text-sm text-gray-600">
           {row.original.areaOrigen?.nombre_area || '-'}
@@ -201,6 +203,7 @@ const DocumentosPage = () => {
     {
       header: 'Tipo',
       accessorKey: 'TipoDocumento',
+      width: '180px',
       cell: ({ row }) => (
         <span className="text-sm text-gray-600">
           {row.original.TipoDocumento?.nombre_tipo || '-'}
@@ -210,6 +213,7 @@ const DocumentosPage = () => {
     {
       header: 'Archivador',
       accessorKey: 'Archivador',
+      width: '150px',
       cell: ({ row }) => (
         <span className="text-sm text-gray-600">
           {row.original.Archivador?.nombre_archivador || '-'}
@@ -221,6 +225,7 @@ const DocumentosPage = () => {
       accessorKey: 'fecha_documento',
       sortable: true,
       align: 'center',
+      width: '110px',
       cell: ({ row }) => (
         <span className="text-sm text-gray-600">
           {new Date(row.original.fecha_documento).toLocaleDateString()}
@@ -232,6 +237,7 @@ const DocumentosPage = () => {
       accessorKey: 'numero_folios',
       align: 'center',
       sortable: true,
+      width: '80px',
       cell: ({ row }) => (
         <span className="text-sm font-medium text-gray-900">{row.original.numero_folios}</span>
       ),
@@ -240,12 +246,15 @@ const DocumentosPage = () => {
       header: 'Estado',
       accessorKey: 'id_estado',
       align: 'center',
+      width: '120px',
       cell: ({ row }) => getEstadoBadge(row.original.id_estado),
     },
     {
       header: 'Acciones',
       id: 'acciones',
       align: 'center',
+      width: '140px',
+      sticky: 'right',
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-2">
           {!row.original.eliminado ? (

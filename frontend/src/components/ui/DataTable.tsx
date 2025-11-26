@@ -16,6 +16,7 @@ export interface Column<T> {
   sortable?: boolean;
   align?: 'left' | 'center' | 'right';
   width?: string;
+  sticky?: 'left' | 'right';
 }
 
 interface DataTableProps<T> {
@@ -147,7 +148,10 @@ export default function DataTable<T>({
                   className={cn(
                     'px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider',
                     getAlignClass(col.align),
-                    col.sortable && 'cursor-pointer select-none hover:bg-gray-100 transition-colors'
+                    col.sortable && 'cursor-pointer select-none hover:bg-gray-100 transition-colors',
+                    col.sticky && 'sticky z-10 bg-gray-50',
+                    col.sticky === 'right' && 'right-0',
+                    col.sticky === 'left' && 'left-0'
                   )}
                   style={{ width: col.width }}
                   onClick={() => col.sortable && handleSort(col)}
@@ -156,7 +160,7 @@ export default function DataTable<T>({
                     <span>{col.header}</span>
                     {col.sortable && col.accessorKey && (
                       <span className="ml-1">
-                        {sortConfig.key === col.accessorKey ? (
+                       {sortConfig.key === col.accessorKey ? (
                           sortConfig.direction === 'asc' ? (
                             <IconChevronUp size={14} className="text-[#032DFF]" />
                           ) : (
@@ -191,7 +195,15 @@ export default function DataTable<T>({
                     key={col.id || String(col.accessorKey) || colIndex}
                     className={cn(
                       'px-6 py-4 whitespace-nowrap text-sm',
-                      getAlignClass(col.align)
+                      getAlignClass(col.align),
+                      col.sticky && 'sticky z-10 bg-white',
+                      col.sticky === 'right' && 'right-0',
+                      col.sticky === 'left' && 'left-0',
+                      // Add shadow for sticky columns to create depth effect
+                      col.sticky === 'right' && 'shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]',
+                      col.sticky === 'left' && 'shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]',
+                      // Maintain striped background for sticky columns
+                      col.sticky && striped && rowIndex % 2 === 1 && 'bg-gray-50'
                     )}
                   >
                     {col.cell
@@ -200,7 +212,7 @@ export default function DataTable<T>({
                       ? String(row[col.accessorKey] ?? '-')
                       : null}
                   </td>
-                ))}
+                ))}{' '}
               </tr>
             ))}
           </tbody>
